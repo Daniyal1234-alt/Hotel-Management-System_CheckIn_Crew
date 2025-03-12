@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold">CheckIn Crew</a>
+        </div>
+    </nav>
+
+    <!-- Room Details Section -->
+    <div class="container mx-auto my-10 px-6">
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <div class="w-full flex justify-center">
+                <img id="room-image" alt="Room Image" class="w-full h-auto max-h-[500px] object-cover rounded-lg">
+            </div>
+            <h2 id="room-title" class="text-3xl font-bold mt-4"></h2>
+            <p id="room-description" class="text-gray-600 mt-2"></p>
+            <p id="room-price" class="text-xl font-bold text-blue-600 mt-2"></p>
+
+            <h3 class="text-2xl font-bold mt-6">Amenities</h3>
+            <ul id="room-amenities" class="mt-2 list-disc pl-5 text-gray-600"></ul>
+
+            <a href="booking.html" class="mt-6 inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Book Now</a>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="container mx-auto px-6">
+        <h3 class="text-2xl font-bold">Customer Reviews</h3>
+        <div class="bg-white shadow-lg rounded-lg p-4 mt-4">
+            <p class="text-gray-700">"Amazing experience! The staff was very professional."</p>
+            <p class="text-sm text-gray-500">- Sarah J.</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-10">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Room data
+        const roomData = {
+            deluxe: {
+                title: "Deluxe Room",
+                description: "Spacious room with a king-size bed and city view.",
+                price: "$150 / night",
+                image: "deluxe.jpg", 
+                amenities: ["Free Wi-Fi", "City View", "Room Service", "Minibar"]
+            },
+            standard: {
+                title: "Standard Room",
+                description: "Cozy room with a queen-size bed and free Wi-Fi.",
+                price: "$100 / night",
+                image: "standard.jpg", 
+                amenities: ["Free Wi-Fi", "Comfortable Bed", "Work Desk"]
+            },
+            suite: {
+                title: "Suite",
+                description: "Luxury suite with a private balcony and ocean view.",
+                price: "$250 / night",
+                image: "luxury.webp", 
+                amenities: ["Private Balcony", "Ocean View", "24/7 Room Service", "Jacuzzi"]
+            }
+        };
+
+        // Get the room type from the URL
+        const params = new URLSearchParams(window.location.search);
+        const roomType = params.get("room");
+
+        // Get elements
+        const titleElem = document.getElementById("room-title");
+        const descriptionElem = document.getElementById("room-description");
+        const priceElem = document.getElementById("room-price");
+        const imageElem = document.getElementById("room-image");
+        const amenitiesElem = document.getElementById("room-amenities");
+
+        // Update page based on room type
+        if (roomType && roomData[roomType]) {
+            const room = roomData[roomType];
+            titleElem.textContent = room.title;
+            descriptionElem.textContent = room.description;
+            priceElem.textContent = room.price;
+            imageElem.src = room.image;
+            imageElem.alt = room.title;
+
+            // Populate amenities
+            amenitiesElem.innerHTML = "";
+            room.amenities.forEach(amenity => {
+                const li = document.createElement("li");
+                li.textContent = amenity;
+                amenitiesElem.appendChild(li);
+            });
+        } else {
+            titleElem.textContent = "Room Not Found";
+            descriptionElem.textContent = "The requested room does not exist.";
+            priceElem.textContent = "";
+            imageElem.style.display = "none";
+            amenitiesElem.innerHTML = "";
+        }
+    </script>
+
+</body>
+</html>

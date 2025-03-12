@@ -1,0 +1,50 @@
+<!DOCTYPE html>  
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Rooms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold">CheckIn Crew</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto my-10 px-6">
+        <h2 class="text-3xl font-bold text-center">Available Rooms</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            
+            <!-- Room 1 -->
+            <div class="bg-white shadow-md p-4 rounded-lg">
+                <h3 class="text-xl font-bold">Deluxe Room</h3>
+                <p class="text-gray-600">Spacious room with a king-size bed and city view.</p>
+                <a href="details.html?room=deluxe" class="text-blue-500 hover:underline">View Details</a>
+            </div>
+
+            <!-- Room 2 -->
+            <div class="bg-white shadow-md p-4 rounded-lg">
+                <h3 class="text-xl font-bold">Standard Room</h3>
+                <p class="text-gray-600">Cozy room with a queen-size bed and free Wi-Fi.</p>
+                <a href="details.html?room=standard" class="text-blue-500 hover:underline">View Details</a>
+            </div>
+
+            <!-- Room 3 -->
+            <div class="bg-white shadow-md p-4 rounded-lg">
+                <h3 class="text-xl font-bold">Suite</h3>
+                <p class="text-gray-600">Luxury suite with a private balcony and ocean view.</p>
+                <a href="details.html?room=suite" class="text-blue-500 hover:underline">View Details</a>
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white text-center p-4">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-bold">CheckIn Crew</a>
+            <ul id="navbar-links" class="flex space-x-6">
+                <li><a href="pages/search.html" class="hover:underline">Search Rooms</a></li>
+                <!-- <li><a href="pages/rooms.html" class="hover:underline">Browse Hotels</a></li> -->
+                <li><a href="pages/hotel-details.html" class="hover:underline">View Hotel Details</a></li>
+                <li id="register-link"><a href="pages/register.html" class="hover:underline">Register</a></li>
+                <li id="login-link"><a href="pages/login.html" class="hover:underline">Login</a></li>
+                <li id="bookings-link" class="hidden"><a href="pages/bookings.html" class="hover:underline">My Bookings</a></li>
+                <li id="history-link" class="hidden"><a href="pages/history.html" class="hover:underline">Booking History</a></li>
+                <li id="logout-link" class="hidden"><a href="#" onclick="logout()" class="hover:underline">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative h-96 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1517840901100-8179e982acb7?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aG90ZWwlMjBib29raW5nfGVufDB8fDB8fHww');">
+        <div class="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center text-white text-center">
+            <h1 class="text-5xl font-bold">Find Your Perfect Stay</h1>
+            <p class="mt-2 text-lg">Browse the best hotels and book effortlessly.</p>
+            <!-- <a href="pages/search.html" class="mt-4 bg-blue-500 px-6 py-2 rounded-lg text-white hover:bg-blue-700">Search Rooms</a> -->
+        </div>
+    </header>
+
+
+    <!-- Features Section -->
+    <section class="container mx-auto my-10 px-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white shadow-md rounded-lg p-6 text-center">
+                <h2 class="text-2xl font-bold">Browse Rooms</h2>
+                <p class="text-gray-600 mt-2">Explore a wide range of accommodations.</p>
+                <a href="pages/rooms.html" class="mt-4 block text-blue-500 hover:underline">View Rooms</a>
+            </div>
+            <div class="bg-white shadow-md rounded-lg p-6 text-center">
+                <h2 class="text-2xl font-bold">View Hotel Details</h2>
+                <p class="text-gray-600 mt-2">Check Hotel details.</p>
+                <a href="pages/details.html" class="mt-4 block text-blue-500 hover:underline">See Details</a>
+            </div>
+            <div class="bg-white shadow-md rounded-lg p-6 text-center" id="register-section">
+                <h2 class="text-2xl font-bold">Register an Account</h2>
+                <p class="text-gray-600 mt-2">Sign up to book and track your stays.</p>
+                <a href="pages/register.html" class="mt-4 block text-blue-500 hover:underline">Register Now</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function checkLoginStatus() {
+            const user = sessionStorage.getItem("user");
+            const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
+    
+            if (isLoggedIn && user) {
+                // document.getElementById("register-link").style.display = "none";
+                document.getElementById("login-link").style.display = "none";
+                document.getElementById("bookings-link").style.display = "block";
+                document.getElementById("history-link").style.display = "block";
+                document.getElementById("logout-link").style.display = "block";
+            }
+        }
+    
+        function logout() {
+            sessionStorage.removeItem("user");
+            sessionStorage.removeItem("isLoggedIn");
+            window.location.reload();
+        }
+    
+        document.addEventListener("DOMContentLoaded", checkLoginStatus);
+    </script>
+    
+
+</body>
+</html>
