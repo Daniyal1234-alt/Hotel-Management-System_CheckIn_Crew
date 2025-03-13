@@ -35,20 +35,26 @@
     
     
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-    
-            if (email === 'user@example.com' && password === 'password123') {
-                // Store user login state properly
-                sessionStorage.setItem('user', email);
-                sessionStorage.setItem('isLoggedIn', 'true');
-    
-                // Redirect to homepage
-                window.location.href = '../index.html';
-            } else {
-                alert('Invalid credentials. Try again.');
+            try {
+                const response = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                window.location.href = data.redirectTo; // Redirect based on user role
+                } else {
+                alert(data.message); // Show error message
+                }
+            } catch (error) {
+                console.error("Error during login:", error);
             }
         });
     </script>

@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mysql": "^2.18.1",
+    "nodemon": "^3.1.9"
+  },
+  "name": "checkin-crew",
+  "version": "1.0.0",
+  "description": "CheckIn Crew is a powerful hotel management software designed to streamline operations, enhance guest experiences, and optimize bookings. With features like reservation management, billing, housekeeping tracking, and real-time reporting, it simplifies hotel administration. Ideal for hotels of all sizes, CheckIn Crew ensures seamless check-ins, efficient staff coordination, and increased revenue.\r ![Company Logo](https://github.com/user-attachments/assets/c1a6580b-5db3-4a07-a4f1-5731e614969a)",
+  "main": "Server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Daniyal1234-alt/checkin-crew.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Daniyal1234-alt/checkin-crew/issues"
+  },
+  "homepage": "https://github.com/Daniyal1234-alt/checkin-crew#readme"
+}
