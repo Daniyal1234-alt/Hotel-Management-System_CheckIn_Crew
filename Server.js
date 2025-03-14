@@ -31,14 +31,26 @@ app.get("/", (req, res) => {
 app.get("/pages/login.html", (req, res) => {
     console.log(req.url);
     res.sendFile(path.join(__dirname, "pages", "login.html"));
-  });
-  
+});
+app.get("/pages/register.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "pages", "register.html"));
+});
+app.get("/pages/search.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "pages", "search.html"));
+});
+app.get("/pages/hotel-details.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "pages", "details.html"));
+});
+app.get("/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "pages", "404.html"));
+});
 // Login Route
 app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-
+  const { email, password } = req.body;
+  console.log(req.body);
+  console.log(email, password);
   const query = "SELECT * FROM users WHERE username = ?";
-  db.query(query, [username], async (err, results) => {
+  db.query(query, [email], (err, results) => {
     if (err) return res.json({ success: false, message: "Database error" });
 
     if (results.length === 0) {
@@ -47,9 +59,8 @@ app.post("/login", (req, res) => {
 
     const user = results[0];
 
-    // Check Password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    // Simple string comparison for password check
+    if (password !== user.password) {
       return res.json({ success: false, message: "Invalid password" });
     }
 
@@ -59,6 +70,25 @@ app.post("/login", (req, res) => {
     } else {
       res.json({ success: true, redirectTo: "/user-dashboard.html" });
     }
+  });
+});
+// Register User
+app.post("/register", (req, res) => {
+  console.log("Registering user...");
+  console.log(req.body);
+  const { name, email, password } = req.body;
+
+  // SQL query to insert user into the database
+  const query = "INSERT INTO users (username, password, role) VALUES (?, ?, 'user')";
+  
+  db.query(query, [email, password], (err, results) => {
+      if (err) {
+          console.error("Database error:", err);
+          return res.json({ success: false, message: "Database error" });
+      }
+
+      // Successful registration response
+      return res.json({ success: true, redirectTo: "/user-dashboard.html" });
   });
 });
 
