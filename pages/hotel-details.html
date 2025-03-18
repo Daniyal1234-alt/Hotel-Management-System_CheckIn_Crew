@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CheckIn Crew - Hotel Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.3/flowbite.min.js"></script>
+</head>
+<body class="bg-gray-100">
+
+     <!-- Navbar -->
+     <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold">CheckIn Crew</a>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="relative bg-cover bg-center h-screen flex items-center justify-center text-white text-center" style="background-image: url('hotel-hero.jpg');">
+        <div class="bg-black bg-opacity-50 p-10 rounded-lg">
+            <h1 class="text-5xl font-bold">Welcome to CheckIn Crew</h1>
+            <p class="text-xl mt-4">Luxury, Comfort, and Unmatched Hospitality</p>
+        </div>
+    </section>
+
+    <!-- Image Slider -->
+    <section class="my-12 container mx-auto px-6">
+        <h2 class="text-3xl font-bold text-center mb-6">Explore Our Hotel</h2>
+        <div id="hotelCarousel" class="relative w-full" data-carousel="slide">
+            <div class="relative h-[600px] overflow-hidden rounded-lg">  <!-- Increased height -->
+                <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                    <img src="hotel1.jpg" class="absolute block w-full h-full object-cover" alt="Hotel View 1">
+                </div>
+                <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                    <img src="hotel2.jpg" class="absolute block w-full h-full object-cover" alt="Hotel View 2">
+                </div>
+                <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                    <img src="hotel3.jpg" class="absolute block w-full h-full object-cover" alt="Hotel View 3">
+                </div>
+            </div>
+            <button type="button" class="absolute top-1/2 left-4 transform -translate-y-1/2 text-white bg-black bg-opacity-50 p-2 rounded-full" data-carousel-prev>&#10094;</button>
+            <button type="button" class="absolute top-1/2 right-4 transform -translate-y-1/2 text-white bg-black bg-opacity-50 p-2 rounded-full" data-carousel-next>&#10095;</button>
+        </div>
+    </section>
+
+    
+        <!-- Hotel Details -->
+    <section class="container mx-auto px-6 my-12 grid md:grid-cols-2 gap-8">
+        <div class="bg-gray-100 p-6 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-gray-800">Our Legacy</h2>
+            <p class="mt-4 text-lg text-gray-700">For over 25 years, CheckIn Crew has been a symbol of <strong>luxury, comfort, and exceptional service</strong>. Founded by passionate hoteliers, our commitment to quality is unmatched. Every stay is crafted to provide an unforgettable experience.</p>
+        </div>
+        <div class="bg-gray-100 p-6 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-gray-800">Location</h2>
+            <p class="mt-4 text-lg text-gray-700">Nestled in the <strong>heart of the city</strong>, CheckIn Crew offers convenient access to major <strong>tourist attractions, business hubs, and entertainment venues</strong>. Whether you're here for work or leisure, our prime location makes it effortless.</p>
+        </div>
+    </section>
+
+    <!-- Staff and Unique Features -->
+    <section class="container mx-auto px-6 my-12 grid md:grid-cols-2 gap-8">
+        <div class="bg-gray-100 p-6 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-gray-800">Our Experienced Staff</h2>
+            <p class="mt-4 text-lg text-gray-700">At CheckIn Crew, <strong>hospitality is an art</strong>. Our team of dedicated professionals is trained to provide <strong>impeccable service</strong>, ensuring that your every need is met with warmth and efficiency.</p>
+        </div>
+        <div class="bg-gray-100 p-6 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-gray-800">Why Choose CheckIn Crew?</h2>
+            <ul class="mt-4 text-lg text-gray-700 list-disc list-inside space-y-2">
+                <li>🌟 <strong>Unparalleled hospitality:</strong> Feel at home with our welcoming team.</li>
+                <li>🏨 <strong>State-of-the-art amenities:</strong> Experience luxury at its finest.</li>
+                <li>📍 <strong>Prime location:</strong> Stay close to the best city attractions.</li>
+                <li>🍽️ <strong>Exceptional dining:</strong> Savor exquisite cuisines from around the world.</li>
+            </ul>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-10">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
