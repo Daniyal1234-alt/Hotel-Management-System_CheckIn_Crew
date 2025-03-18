@@ -33,45 +33,40 @@ pool.getConnection()
     console.error("Database connection failed:", err);
     process.exit(1);
   });
-
-// Serve static files
+// Serve static files from the "pages" directory
 app.use(express.static(path.join(__dirname, "pages")));
 
 // Routes
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "pages", "index.html"));
+app.get("/pages", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get("/pages/login.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "pages", "login.html"));
+// Serve static HTML files from /pages
+const staticPages = ["login", "register", "search", "details", "rooms", "hotel-details", "user-choice", "bookings"];
+staticPages.forEach(page => {
+  app.get(`/pages/${page}.html`, (req, res) => {
+    res.sendFile(path.join(__dirname, "pages", `${page}.html`));
+  });
 });
 
-app.get("/pages/register.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "pages", "register.html"));
+// Handle room details dynamically
+app.get("/pages/details.html", (req, res) => {
+  const roomType = req.query.room;
+  const validRooms = ["standard", "deluxe", "suite"];
+
+  if (validRooms.includes(roomType)) {
+    res.sendFile(path.join(__dirname, "pages", `${roomType}.html`));
+  } else {
+    res.sendFile(path.join(__dirname, "pages", "details.html"));
+  }
 });
 
-app.get("/pages/search.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "pages", "search.html"));
-});
-
-app.get("/pages/hotel-details.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "pages", "details.html"));
-});
-app.get("/pages/rooms.html", (req,res) => {
-  res.sendFile(path.join(__dirname, "pages", "rooms.html"));
-});
-app.get("/pages/details.html?room=standard", (req, res) =>{
-  res.sendFile(path.join(__dirname, "pages", "standard.html"));
-});
-app.get("/pages/details.html?room=deluxe", (req, res) =>{
-  res.sendFile(path.join(__dirname, "pages", "deluxe.html"));
-});
-app.get("/pages/details.html?room=suite", (req, res) =>{
-  res.sendFile(path.join(__dirname, "pages", "suite.html"));
-});
+// Catch-all route for 404
 app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "pages", "404.html"));
 });
+
+
 
 // Login Route with bcrypt
 app.post("/login", async (req, res) => {
