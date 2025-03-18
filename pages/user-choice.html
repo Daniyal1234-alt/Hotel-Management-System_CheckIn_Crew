@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select User Role</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold">CheckIn Crew</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex-grow flex flex-col items-center justify-center">
+        <h2 class="text-4xl font-bold text-center mb-24 mt-[-80px]">Select Your Role</h2>  <!-- Adjusted margin to move up -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
+            
+            <!-- Registered User -->
+            <button onclick="selectRole('registered')" class="bg-white shadow-lg p-8 rounded-xl text-center w-full hover:bg-gray-200 transition flex flex-col items-center">
+                <img src="user.png" alt="Registered User" class="w-32 h-32 mb-4 rounded-full">
+                <h3 class="text-2xl font-bold">Registered User</h3>
+            </button>
+
+            <!-- Staff -->
+            <button onclick="selectRole('staff')" class="bg-white shadow-lg p-8 rounded-xl text-center w-full hover:bg-gray-200 transition flex flex-col items-center">
+                <img src="staff2.jpg" alt="Staff" class="w-32 h-32 mb-4 rounded-full">
+                <h3 class="text-2xl font-bold">Staff</h3>
+            </button>
+
+            <!-- Admin -->
+            <button onclick="selectRole('admin')" class="bg-white shadow-lg p-8 rounded-xl text-center w-full hover:bg-gray-200 transition flex flex-col items-center">
+                <img src="admin.png" alt="Admin" class="w-32 h-32 mb-4 rounded-full">
+                <h3 class="text-2xl font-bold">Admin</h3>
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function selectRole(role) {
+            sessionStorage.setItem("userRole", role);
+            window.location.href = "login.html";
+        }
+    </script>
+</body>
+</html>

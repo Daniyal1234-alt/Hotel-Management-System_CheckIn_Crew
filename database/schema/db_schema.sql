@@ -1,9 +1,9 @@
 CREATE DATABASE IF NOT EXISTS hotel_db;
 USE hotel_db;
 
-drop table users;
-drop table hotels;
-drop table rooms;
+-- drop table users;
+-- drop table hotels;
+-- drop table rooms;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
