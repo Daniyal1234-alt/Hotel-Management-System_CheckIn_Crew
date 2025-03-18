@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 const dbConfig = {
   host: "localhost",
   user: "root",
-  password: "Maazking1@",
+  password: "dani",
   database: "hotel_db",
   waitForConnections: true,
   connectionLimit: 10,
@@ -57,7 +57,18 @@ app.get("/pages/search.html", (req, res) => {
 app.get("/pages/hotel-details.html", (req, res) => {
   res.sendFile(path.join(__dirname, "pages", "details.html"));
 });
-
+app.get("/pages/rooms.html", (req,res) => {
+  res.sendFile(path.join(__dirname, "pages", "rooms.html"));
+});
+app.get("/pages/details.html?room=standard", (req, res) =>{
+  res.sendFile(path.join(__dirname, "pages", "standard.html"));
+});
+app.get("/pages/details.html?room=deluxe", (req, res) =>{
+  res.sendFile(path.join(__dirname, "pages", "deluxe.html"));
+});
+app.get("/pages/details.html?room=suite", (req, res) =>{
+  res.sendFile(path.join(__dirname, "pages", "suite.html"));
+});
 app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "pages", "404.html"));
 });
