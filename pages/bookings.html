@@ -88,6 +88,8 @@
     </footer>
 
     <script>
+        const email = sessionStorage.getItem("email");
+        const isLoggedIn = sessionStorage.getItem("isLoggedIn");
         const bookingForm = document.getElementById("booking-form");
         const paymentDialog = document.getElementById("payment-dialog");
         const paymentInfo = document.getElementById("payment-info");
@@ -119,6 +121,38 @@
                 }
             });
         });
+        document.getElementById("booking-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const name = document.getElementById("full-name").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const phone = document.getElementById("phone-number").value.trim();
+            const checkIn = document.getElementById("check-in").value;
+            const checkOut = document.getElementById("check-out").value;
+            const room = document.getElementById("room-type").selectedOptions[0].text;
+            const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || "Not selected";
+            const price = document.getElementById("room-type").selectedOptions[0].getAttribute("data-price") || 0; // Get price from option
+
+            try {
+                console.log(JSON.stringify({ name, email, phone, checkIn, checkOut, room, paymentMethod, price }));
+                const response = await fetch("/book-room", {
+                    
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, phone, checkIn, checkOut, room, paymentMethod, price }),
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert("Booking Confirmed! A confirmation email has been sent.");
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert("An error occurred while booking. Please try again.");
+                console.error(error);
+            }
+        });
 
         closeDialogButton.addEventListener("click", function() {
             paymentDialog.classList.add("hidden");
@@ -126,7 +160,7 @@
 
         confirmPaymentButton.addEventListener("click", function() {
             paymentDialog.classList.add("hidden");
-            alert("Booking Confirmed! A confirmation email has been sent.");
+            alert("Processing Payment");
         });
     </script>
 </body>
