@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function cancelBooking(event) {
+            event.preventDefault();
+            if (confirm("Are you sure you want to cancel this booking?")) {
+                alert("Booking cancelled successfully");
+                // Here, you can add logic to update the booking status in the database
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-bold">CheckIn Crew</a>
+        </div>
+    </nav>
+
+    <!-- Booking History Section -->
+    <div class="container mx-auto my-10 p-6 bg-white shadow-md rounded-lg flex-grow">
+        <h1 class="text-3xl font-bold mb-4">Booking History</h1>
+
+        <table class="w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border p-3">Room</th>
+                    <th class="border p-3">Check-In</th>
+                    <th class="border p-3">Check-Out</th>
+                    <th class="border p-3">Status</th>
+                    <th class="border p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Example Rows (Replace with DB Data) -->
+                <tr>
+                    <td class="border p-3">Deluxe Suite</td>
+                    <td class="border p-3">2025-03-01</td>
+                    <td class="border p-3">2025-03-05</td>
+                    <td class="border p-3">On-going</td>
+                    <td class="border p-3 flex space-x-2">
+                        <a href="bookings.html" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">Modify</a>
+                        <button onclick="cancelBooking(event)" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">Cancel</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="border p-3">Executive Room</td>
+                    <td class="border p-3">2025-02-20</td>
+                    <td class="border p-3">2025-02-25</td>
+                    <td class="border p-3">Completed</td>
+                    <td class="border p-3">
+                        <a href="review.html" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">Give Review</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
