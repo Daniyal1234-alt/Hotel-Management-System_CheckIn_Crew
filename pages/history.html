@@ -6,13 +6,145 @@
     <title>Booking History</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        function cancelBooking(event) {
-            event.preventDefault();
-            if (confirm("Are you sure you want to cancel this booking?")) {
-                alert("Booking cancelled successfully");
-                // Here, you can add logic to update the booking status in the database
+        // Function to format ISO date to MM/DD/YYYY
+        function formatDate(isoDate) {
+            const date = new Date(isoDate);
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${month}/${day}/${year}`;
+        }
+
+        // Fetch booking data from the server
+        async function fetchBookings() {
+            try {
+                const response = await fetch('http://localhost:5000/api/bookings');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const bookings = await response.json();
+                populateTable(bookings);
+            } catch (error) {
+                console.error('Error fetching bookings:', error);
+                alert('Failed to load booking history: ' + error.message);
             }
         }
+
+        // Populate the table with fetched data
+        function populateTable(bookings) {
+            const tableBody = document.querySelector('tbody');
+            tableBody.innerHTML = ''; // Clear any existing rows
+
+            if (bookings.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="border p-3 text-center">No bookings found</td></tr>';
+                return;
+            }
+
+            bookings.forEach(booking => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border p-3">${booking.room}</td>
+                    <td class="border p-3">${formatDate(booking.checkIn)}</td>
+                    <td class="border p-3">${formatDate(booking.checkOut)}</td>
+                    <td class="border p-3">${booking.status}</td>
+                    <td class="border p-3 flex space-x-2">
+                        ${booking.status === 'confirmed' ? `
+                            <a href="bookings.html?id=${booking.id}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">Modify</a>
+                            <button onclick="cancelBooking(${booking.id}, event)" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">Cancel</button>
+                            <button onclick="checkoutBooking(${booking.id}, event)" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-700">Checkout</button>
+                        ` : booking.status === 'checked-out' ? `
+                            <a href="review.html?id=${booking.id}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">Give Review</a>
+                            ${booking.hasFeedback ? `
+                                <button onclick="viewReview(${booking.id}, event)" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-700">View Review</button>
+                            ` : ''}
+                        ` : ''}
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Handle booking cancellation
+        async function cancelBooking(bookingId, event) {
+            event.preventDefault();
+            if (confirm("Are you sure you want to cancel this booking?")) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/cancel`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (!response.ok) {
+                        throw new Error('Failed to cancel booking');
+                    }
+                    const result = await response.json();
+                    if (result.success) {
+                        alert("Booking cancelled successfully");
+                        fetchBookings(); // Refresh the table
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error cancelling booking:', error);
+                    alert('Failed to cancel booking: ' + error.message);
+                }
+            }
+        }
+
+        // Handle booking checkout
+        async function checkoutBooking(bookingId, event) {
+            event.preventDefault();
+            if (confirm("Are you sure you want to check out this booking?")) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/checkout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (!response.ok) {
+                        throw new Error('Failed to checkout booking');
+                    }
+                    const result = await response.json();
+                    if (result.success) {
+                        alert("Booking checked out successfully");
+                        fetchBookings(); // Refresh the table to show "Give Review"
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error checking out booking:', error);
+                    alert('Failed to checkout booking: ' + error.message);
+                }
+            }
+        }
+
+        // Handle viewing review
+        async function viewReview(bookingId, event) {
+            event.preventDefault();
+            try {
+                const response = await fetch(`http://localhost:5000/api/feedback/${bookingId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch review');
+                }
+                const feedback = await response.json();
+                if (feedback.success) {
+                    const reviews = feedback.data; // Now an array of feedback entries
+                    let reviewText = `Reviews for Booking ID ${bookingId}\n\n`;
+                    reviews.forEach((review, index) => {
+                        const { rating, comment, submitted_at } = review;
+                        const formattedDate = new Date(submitted_at).toLocaleString();
+                        reviewText += `Review ${index + 1}:\nRating: ${rating}/5\nComment: ${comment || 'No comment provided'}\nSubmitted: ${formattedDate}\n\n`;
+                    });
+                    alert(reviewText);
+                } else {
+                    alert(feedback.message);
+                }
+            } catch (error) {
+                console.error('Error fetching review:', error);
+                alert('Failed to load review: ' + error.message);
+            }
+        }
+
+        // Load bookings when the page is ready
+        document.addEventListener('DOMContentLoaded', fetchBookings);
     </script>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen">
@@ -20,7 +152,7 @@
     <!-- Navbar -->
     <nav class="bg-blue-600 text-white p-4">
         <div class="container mx-auto flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-bold">CheckIn Crew</a>
+            <a href="/index.html" class="text-2xl font-bold">CheckIn Crew</a>
         </div>
     </nav>
 
@@ -39,33 +171,14 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Example Rows (Replace with DB Data) -->
-                <tr>
-                    <td class="border p-3">Deluxe Suite</td>
-                    <td class="border p-3">2025-03-01</td>
-                    <td class="border p-3">2025-03-05</td>
-                    <td class="border p-3">On-going</td>
-                    <td class="border p-3 flex space-x-2">
-                        <a href="bookings.html" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">Modify</a>
-                        <button onclick="cancelBooking(event)" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">Cancel</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="border p-3">Executive Room</td>
-                    <td class="border p-3">2025-02-20</td>
-                    <td class="border p-3">2025-02-25</td>
-                    <td class="border p-3">Completed</td>
-                    <td class="border p-3">
-                        <a href="review.html" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">Give Review</a>
-                    </td>
-                </tr>
+                <!-- Rows will be populated dynamically -->
             </tbody>
         </table>
     </div>
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+        <p>© 2025 CheckIn Crew. All rights reserved.</p>
     </footer>
 
 </body>

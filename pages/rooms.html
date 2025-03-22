@@ -19,73 +19,108 @@
     <div class="container mx-auto my-10 px-6 flex-grow">
         <h2 class="text-4xl font-bold text-center text-gray-800">Available Rooms</h2>
 
-
         <!-- Standard Rooms Section -->
         <div class="mt-10">
             <h3 class="text-3xl font-bold mb-4 text-green-700">Standard Rooms</h3>
             <div id="standardRooms" class="flex gap-4 overflow-x-auto p-4 bg-green-100 shadow-lg rounded-lg"></div>
         </div>
 
-        
         <!-- Deluxe Rooms Section -->
         <div class="mt-10">
             <h3 class="text-3xl font-bold mb-4 text-blue-700">Deluxe Rooms</h3>
             <div id="deluxeRooms" class="flex gap-4 overflow-x-auto p-4 bg-blue-100 shadow-lg rounded-lg"></div>
         </div>
 
-        
-
         <!-- Suite Rooms Section -->
         <div class="mt-10">
             <h3 class="text-3xl font-bold mb-4 text-purple-700">Suites</h3>
             <div id="suiteRooms" class="flex gap-4 overflow-x-auto p-4 bg-purple-100 shadow-lg rounded-lg"></div>
         </div>
-
     </div>
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+        <p>© 2025 CheckIn Crew. All rights reserved.</p>
     </footer>
 
     <script>
-        function generateRooms(category, containerId, descriptions, color) {
+        // Static room data with room IDs mapped to your database (adjust these IDs based on your actual rooms table)
+        const roomData = {
+            Deluxe: [
+                { id: 3, desc: "Elegant room with modern decor and a stunning city view." },
+                { id: 4, desc: "Luxury king-size bed with complimentary breakfast." },
+                { id: 5, desc: "Spacious suite with a minibar and workspace." },
+                { id: 6, desc: "Panoramic window view and private lounge access." },
+                { id: 7, desc: "Premium comfort with 24-hour room service." }
+            ],
+            Standard: [
+                { id: 1, desc: "Cozy room with a comfortable queen-size bed." },
+                { id: 2, desc: "Affordable stay with free Wi-Fi and TV." },
+                { id: 8, desc: "Basic amenities with a work desk and chair." },
+                { id: 9, desc: "Perfect for solo travelers or short stays." },
+                { id: 10, desc: "Clean and comfortable with a private bathroom." }
+            ],
+            Suite: [
+                { id: 11, desc: "Luxury suite with a private balcony and ocean view." },
+                { id: 12, desc: "Spacious suite with a living area and butler service." },
+                { id: 13, desc: "Exclusive penthouse suite with rooftop access." },
+                { id: 14, desc: "VIP experience with jacuzzi and lounge area." },
+                { id: 15, desc: "Royal suite with premium furnishings and services." }
+            ]
+        };
+
+        function generateRooms(category, containerId, rooms, color) {
             const container = document.getElementById(containerId);
-            descriptions.forEach((desc, index) => {
+            rooms.forEach((room, index) => {
                 let roomCard = `
                     <div class="bg-white p-4 rounded-lg shadow-md min-w-[250px] border-t-4 border-${color}-500">
                         <h4 class="text-xl font-bold text-${color}-700">${category} Room ${index + 1}</h4>
-                        <p class="text-gray-600">${desc}</p>
-                        <a href="details.html?room=${category.toLowerCase()}${index + 1}" class="text-${color}-500 hover:underline">View Details</a>
+                        <p class="text-gray-600">${room.desc}</p>
+                        <div class="mt-2 flex space-x-2">
+                            <a href="details.html?room=${category.toLowerCase()}${index + 1}" class="text-${color}-500 hover:underline">View Details</a>
+                            <button onclick="viewRoomFeedback(${room.id}, event)" class="text-purple-500 hover:underline">View Feedback</button>
+                        </div>
                     </div>
                 `;
                 container.innerHTML += roomCard;
             });
         }
 
-        generateRooms("Deluxe", "deluxeRooms", [
-            "Elegant room with modern decor and a stunning city view.",
-            "Luxury king-size bed with complimentary breakfast.",
-            "Spacious suite with a minibar and workspace.",
-            "Panoramic window view and private lounge access.",
-            "Premium comfort with 24-hour room service."
-        ], "blue");
+        // Populate static rooms
+        generateRooms("Deluxe", "deluxeRooms", roomData.Deluxe, "blue");
+        generateRooms("Standard", "standardRooms", roomData.Standard, "green");
+        generateRooms("Suite", "suiteRooms", roomData.Suite, "purple");
 
-        generateRooms("Standard", "standardRooms", [
-            "Cozy room with a comfortable queen-size bed.",
-            "Affordable stay with free Wi-Fi and TV.",
-            "Basic amenities with a work desk and chair.",
-            "Perfect for solo travelers or short stays.",
-            "Clean and comfortable with a private bathroom."
-        ], "green");
-
-        generateRooms("Suite", "suiteRooms", [
-            "Luxury suite with a private balcony and ocean view.",
-            "Spacious suite with a living area and butler service.",
-            "Exclusive penthouse suite with rooftop access.",
-            "VIP experience with jacuzzi and lounge area.",
-            "Royal suite with premium furnishings and services."
-        ], "purple");
+        // Fetch and display feedback for a specific room
+        async function viewRoomFeedback(roomId, event) {
+            event.preventDefault();
+            try {
+                const response = await fetch(`http://localhost:5000/api/feedback/room/${roomId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch feedback');
+                }
+                const feedback = await response.json();
+                if (feedback.success) {
+                    const reviews = feedback.data;
+                    if (reviews.length === 0) {
+                        alert(`No feedback available for Room ID ${roomId}`);
+                        return;
+                    }
+                    let feedbackText = `Feedback for Room ID ${roomId}\n\n`;
+                    reviews.forEach((review, index) => {
+                        const { rating, comment, submitted_at } = review;
+                        const formattedDate = new Date(submitted_at).toLocaleString();
+                        feedbackText += `Review ${index + 1}:\nRating: ${rating}/5\nComment: ${comment || 'No comment provided'}\nSubmitted: ${formattedDate}\n\n`;
+                    });
+                    alert(feedbackText);
+                } else {
+                    alert(feedback.message);
+                }
+            } catch (error) {
+                console.error('Error fetching room feedback:', error);
+                alert('Failed to load feedback: ' + error.message);
+            }
+        }
     </script>
 
 </body>

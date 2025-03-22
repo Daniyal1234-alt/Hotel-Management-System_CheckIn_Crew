@@ -6,6 +6,7 @@
     <title>Share Your Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Set star rating and update hidden input
         function setRating(value) {
             document.getElementById("rating").value = value;
             const stars = document.querySelectorAll(".star");
@@ -15,13 +16,78 @@
             });
         }
 
-        function handleSubmit(event) {
-            event.preventDefault();
-            // Simulate form submission and redirect
-            setTimeout(() => {
-                window.location.href = "history.html";
-            }, 500); // Simulate a short delay before redirection
+        // Get booking ID from URL query parameters
+        function getBookingId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
         }
+
+        // Fetch room details for the booking
+        async function fetchRoomDetails() {
+            const bookingId = getBookingId();
+            if (!bookingId) {
+                alert("No booking ID found in URL");
+                return;
+            }
+            try {
+                const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const booking = await response.json();
+                document.getElementById("room").value = booking.room;
+                document.getElementById("roomDisplay").textContent = `Room: ${booking.room}`;
+            } catch (error) {
+                console.error('Error fetching room details:', error);
+                alert('Failed to load room details: ' + error.message);
+            }
+        }
+
+        // Handle form submission
+        async function handleSubmit(event) {
+            event.preventDefault();
+            const bookingId = getBookingId();
+            const rating = document.getElementById("rating").value;
+            const comment = document.querySelector("textarea[name='review_text']").value;
+
+            if (!bookingId) {
+                alert("No booking ID found");
+                return;
+            }
+            if (rating === "0") {
+                alert("Please select a rating");
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bookingId: bookingId,
+                        rating: parseInt(rating),
+                        comment: comment
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to submit feedback');
+                }
+                const result = await response.json();
+                if (result.success) {
+                    alert("Feedback submitted successfully!");
+                    window.location.href = "/pages/history.html";
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                alert('Failed to submit feedback: ' + error.message);
+            }
+        }
+
+        // Load room details when the page loads
+        document.addEventListener('DOMContentLoaded', fetchRoomDetails);
     </script>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
@@ -29,7 +95,7 @@
     <!-- Navbar -->
     <nav class="bg-blue-600 text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-bold">CheckIn Crew</a>
+            <a href="/index.html" class="text-2xl font-bold">CheckIn Crew</a>
         </div>
     </nav>
 
@@ -37,9 +103,10 @@
     <div class="container mx-auto my-12 p-8 bg-white shadow-lg rounded-lg flex-grow max-w-3xl">
         <h1 class="text-4xl font-extrabold text-center text-blue-600 mb-4">How was your stay?</h1>
         <p class="text-center text-gray-600 mb-8">Your feedback helps us improve! Please rate your experience and share your thoughts.</p>
+        <p id="roomDisplay" class="text-center text-gray-700 font-semibold mb-8"></p>
 
         <form onsubmit="handleSubmit(event)">
-            <input type="hidden" name="room" value="<!-- Room name from query params -->">
+            <input type="hidden" id="room" name="room" value="">
             <input type="hidden" name="rating" id="rating" value="0">
 
             <!-- Star Rating -->
@@ -74,7 +141,7 @@
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+        <p>© 2025 CheckIn Crew. All rights reserved.</p>
     </footer>
 
 </body>
