@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 const dbConfig = {
   host: "localhost",
   user: "root",
-  password: "Maazking1@",
+  password: "dani",
   database: "hotel_db",
   waitForConnections: true,
   connectionLimit: 10,
@@ -43,13 +43,12 @@ app.get("/pages", (req, res) => {
 });
 
 // Serve static HTML files from /pages
-const staticPages = ["login", "register", "search", "details", "rooms", "hotel-details", "user-choice", "bookings", "history", "review"];
+const staticPages = ["login", "register", "search", "details", "rooms", "hotel-details", "user-choice","update-booking", "bookings", "history", "review"];
 staticPages.forEach(page => {
   app.get(`/pages/${page}.html`, (req, res) => {
     res.sendFile(path.join(__dirname, "pages", `${page}.html`));
   });
 });
-
 // Handle room details dynamically
 app.get("/pages/details.html", (req, res) => {
   const roomType = req.query.room;
@@ -58,6 +57,42 @@ app.get("/pages/details.html", (req, res) => {
     res.sendFile(path.join(__dirname, "pages", `${roomType}.html`));
   } else {
     res.sendFile(path.join(__dirname, "pages", "details.html"));
+  }
+});
+//Get booking for updating 
+app.patch('/api/bookings/:id', async (req, res) => {
+  const bookingId = req.params.id;
+  const { room_id, check_in, check_out, payment_method } = req.body;
+
+  if (!room_id || !check_in || !check_out || !payment_method) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+  }
+
+  try {
+      // Get room price from rooms table
+      const [room] = await pool.promise().query('SELECT price FROM rooms WHERE id = ?', [room_id]);
+      if (room.length === 0) {
+          return res.status(404).json({ success: false, message: "Room not found" });
+      }
+      const roomPrice = room[0].price;
+
+      // Calculate total price based on duration
+      const days = Math.ceil((new Date(check_out) - new Date(check_in)) / (1000 * 60 * 60 * 24));
+      if (days <= 0) {
+          return res.status(400).json({ success: false, message: "Invalid dates" });
+      }
+      const total_price = days * roomPrice;
+
+      // Update booking in the database
+      await pool.promise().query(
+          'UPDATE bookings SET room_id = ?, check_in = ?, check_out = ?, payment_method = ?, total_price = ? WHERE id = ?',
+          [room_id, check_in, check_out, payment_method, total_price, bookingId]
+      );
+
+      res.json({ success: true, message: "Booking updated successfully!", total_price });
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: "Server error", error: err });
   }
 });
 
@@ -83,29 +118,44 @@ app.get('/api/rooms', async (req, res) => {
 });
 
 // API to get all bookings with feedback status
-app.get('/api/bookings', async (req, res) => {
+app.post('/api/bookings', async (req, res) => {
   try {
-    const [rows] = await pool.execute(`
-      SELECT 
-        bookings.id,
-        rooms.room_number AS room,
-        bookings.check_in AS checkIn,
-        bookings.check_out AS checkOut,
-        bookings.status,
-        EXISTS (SELECT 1 FROM feedback WHERE feedback.booking_id = bookings.id) AS hasFeedback
-      FROM bookings
-      JOIN rooms ON bookings.room_id = rooms.id
-    `);
-    res.json(rows);
+      const { userID } = req.body; // Extract from request body
+      console.log("UserID: ", userID);
+
+      if (!userID) {
+          return res.status(400).json({ success: false, message: "User ID is required" });
+      }
+
+      const [rows] = await pool.execute(`
+          SELECT 
+              bookings.id,
+              rooms.room_number AS room,
+              bookings.check_in AS checkIn,
+              bookings.check_out AS checkOut,
+              bookings.status,
+              EXISTS (SELECT 1 FROM feedback WHERE feedback.booking_id = bookings.id) AS hasFeedback
+          FROM bookings
+          JOIN rooms ON bookings.room_id = rooms.id 
+          WHERE bookings.user_id = ?
+      `, [userID]);
+
+      res.json(rows);
   } catch (err) {
-    console.error('Error fetching bookings:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch bookings' });
+      console.error("Error fetching bookings:", err);
+      res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 });
 
+
 // API to get a specific booking by ID
-app.get('/api/bookings/:id', async (req, res) => {
-  const bookingId = req.params.id;
+app.get('/api/bookings', async (req, res) => {
+  const userID = req.query.userID;
+
+  if (!userID) {
+    return res.status(400).json({ success: false, message: "User ID is required" });
+  }
+
   try {
     const [rows] = await pool.execute(`
       SELECT 
@@ -113,21 +163,23 @@ app.get('/api/bookings/:id', async (req, res) => {
         rooms.room_number AS room,
         bookings.check_in AS checkIn,
         bookings.check_out AS checkOut,
-        bookings.status,
-        bookings.user_id
+        bookings.status
       FROM bookings
       JOIN rooms ON bookings.room_id = rooms.id
-      WHERE bookings.id = ?
-    `, [bookingId]);
+      WHERE bookings.user_id = ?
+    `, [userID]);
+
     if (rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
+      return res.status(404).json({ success: false, message: "No bookings found" });
     }
-    res.json(rows[0]);
+
+    res.json(rows);
   } catch (err) {
-    console.error('Error fetching booking:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch booking' });
+    console.error("Error fetching bookings:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 });
+
 
 // API to cancel a booking
 app.post('/api/bookings/:id/cancel', async (req, res) => {
@@ -259,7 +311,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.json({ success: false, message: "Invalid password" });
     }
-    const token = { email: user.email, role: user.role };
+    const token = { id: user.id,name: user.name, email: user.email, role: user.role };
     const redirectPath = user.role === "admin" ? "/admin-dashboard.html" : "/index.html";
     res.json({ success: true, redirectTo: redirectPath, user: token });
   } catch (err) {
@@ -285,6 +337,25 @@ app.post("/register", async (req, res) => {
     console.error("Registration error:", err);
     const message = err.code === "ER_DUP_ENTRY" ? "Email already exists" : "Registration failed";
     res.status(500).json({ success: false, message });
+  }
+});
+// Update booking (delete old, insert new)
+app.get('/api/bookings', async (req, res) => {
+  const userId = req.query.userID; // Get user ID from the frontend
+
+  if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID is required" });
+  }
+
+  try {
+      const [bookings] = await pool.execute(
+          `SELECT * FROM bookings WHERE user_id = ?`, [userId]
+      );
+      
+      res.json({ success: true, bookings });
+  } catch (error) {
+      console.error("Error fetching user bookings:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 });
 
