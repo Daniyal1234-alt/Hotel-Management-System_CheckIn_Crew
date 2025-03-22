@@ -4,6 +4,7 @@ CheckIn Crew is a powerful hotel management software designed to streamline oper
 
 ## Database Setup
 
+#  Each Room has personal feedbacks now visible before booking rooms
 
 For Team Members:
 
