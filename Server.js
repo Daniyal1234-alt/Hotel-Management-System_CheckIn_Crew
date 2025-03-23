@@ -146,7 +146,80 @@ app.post('/api/bookings', async (req, res) => {
       res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 });
+// GET Booking Details
+app.get("/api/bookings/:id", async (req, res) => {
+    const { id } = req.params;
 
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute(
+            "SELECT room_id, check_in, check_out FROM bookings WHERE id = ?",
+            [id]
+        );
+        connection.end();
+
+        if (rows.length > 0) {
+            res.json(rows[0]);
+        } else {
+            res.status(404).json({ message: "Booking not found" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// UPDATE Booking Details
+app.put("/api/bookings/:id", async (req, res) => {
+  const { id } = req.params;
+  const { room_id, check_in, check_out } = req.body;
+
+  // Validate input
+  if (!room_id || !check_in || !check_out) {
+      return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const connection = await mysql.createConnection(dbConfig);
+
+  try {
+      await connection.beginTransaction();
+
+      // Check for overlapping bookings for the same room
+      const [existingBookings] = await connection.execute(
+          `SELECT id FROM bookings 
+           WHERE room_id = ? AND id != ? AND 
+           ((check_in <= ? AND check_out > ?) OR 
+            (check_in < ? AND check_out >= ?) OR 
+            (check_in >= ? AND check_out <= ?))`,
+          [room_id, id, check_in, check_in, check_out, check_out, check_in, check_out]
+      );
+
+      if (existingBookings.length > 0) {
+          await connection.rollback();
+          return res.status(400).json({ message: "Room already booked for selected dates!" });
+      }
+
+      // Update the booking
+      const [result] = await connection.execute(
+          "UPDATE bookings SET room_id = ?, check_in = ?, check_out = ? WHERE id = ?",
+          [room_id, check_in, check_out, id]
+      );
+
+      if (result.affectedRows > 0) {
+          await connection.commit();
+          res.json({ message: "Booking updated successfully" });
+      } else {
+          await connection.rollback();
+          res.status(404).json({ message: "Booking not found" });
+      }
+  } catch (error) {
+      await connection.rollback();
+      console.error("Error updating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+  } finally {
+      connection.end();
+  }
+});
 
 // API to get a specific booking by ID
 app.get('/api/bookings', async (req, res) => {

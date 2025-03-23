@@ -3,130 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Update Booking</title>
+    <title>Update Booking Details</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        
-        async function loadBookingDetails() {
-            const params = new URLSearchParams(window.location.search);
-            let userId = JSON.parse(sessionStorage.getItem("user"));
-            if (!userId) {
-                alert("User ID not found in session storage.");
-            } else {
-                userId = parseInt(userId, 10);
-            }
-            params = new URLSearchParams(window.location.search);
-            bookingId = params.get("id");
-
-            if (!bookingId) {
-                alert("No booking ID found.");
-                return;
-            }
-            alert(`Booking ID: ${bookingId} User ID: ${userId}`);
-            try {
-                const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`);
-                if (!response.ok) throw new Error("Failed to fetch booking");
-
-                const data = await response.json();
-                if (!data.success) throw new Error("Error: ", data.message);
-
-                const booking = data.booking;
-
-                if (parseInt(booking.user_id, 10) !== userId) {
-                    alert("You do not have permission to edit this booking.");
-                    window.location.href = "bookings.html";
-                    return;
-                }
-
-                document.getElementById("roomId").value = booking.room_id;
-                document.getElementById("checkIn").value = booking.check_in;
-                document.getElementById("checkOut").value = booking.check_out;
-                document.getElementById("paymentMethod").value = booking.payment_method;
-                document.getElementById("totalPrice").value = booking.total_price;
-            } catch (error) {
-                console.error("Error loading booking:", error);
-                alert(error.message);
-            }
-        }
-
-        async function updateBooking(event) {
-            event.preventDefault();
-
-            const newRoomId = document.getElementById("roomId").value;
-            const newCheckIn = document.getElementById("checkIn").value;
-            const newCheckOut = document.getElementById("checkOut").value;
-            const newPaymentMethod = document.getElementById("paymentMethod").value;
-            const newTotalPrice = document.getElementById("totalPrice").value;
-
-            if (!newRoomId || !newCheckIn || !newCheckOut || !newPaymentMethod || !newTotalPrice) {
-                alert("Please fill all fields.");
-                return;
-            }
-
-            if (new Date(newCheckOut) <= new Date(newCheckIn)) {
-                alert("Check-out date must be after check-in date.");
-                return;
-            }
-
-            try {
-                const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        room_id: newRoomId,
-                        check_in: newCheckIn,
-                        check_out: newCheckOut,
-                        payment_method: newPaymentMethod,
-                        total_price: newTotalPrice
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    alert("Booking updated successfully!");
-                    window.location.href = "bookings.html";
-                } else {
-                    alert(result.message);
-                }
-            } catch (error) {
-                console.error("Error updating booking:", error);
-                alert("Failed to update booking.");
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", loadBookingDetails);
-    </script>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- Navbar -->
     <nav class="bg-blue-600 text-white p-4">
-        <div class="container mx-auto">
-            <a href="/index.html" class="text-2xl font-bold">CheckIn Crew</a>
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold">CheckIn Crew</a>
         </div>
     </nav>
 
-    <div class="container mx-auto my-10 p-6 bg-white shadow-md rounded-lg">
-        <h1 class="text-3xl font-bold mb-4">Update Booking</h1>
+    <!-- Main Content -->
+    <div class="flex-grow container mx-auto my-10 px-6 flex justify-center items-center">
+        <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-2xl">
+            <h2 class="text-3xl font-bold mb-4 text-center">Update Booking Details</h2>
 
-        <form onsubmit="updateBooking(event)">
-            <label class="block">Room ID:</label>
-            <input type="number" id="roomId" class="border p-2 w-full mb-3" required>
+            <!-- Display Booking Details -->
+            <div id="booking-details" class="mb-6">
+                <h3 class="text-xl font-bold mb-4">Booking Details</h3>
+                <p><strong>Room ID:</strong> <span id="current-room-id"></span></p>
+                <p><strong>Check-in Date:</strong> <span id="check-in-date"></span></p>
+                <p><strong>Check-out Date:</strong> <span id="check-out-date"></span></p>
+            </div>
 
-            <label class="block">Check-In Date:</label>
-            <input type="date" id="checkIn" class="border p-2 w-full mb-3" required>
+            <!-- Update Booking Form -->
+            <form id="update-booking-form" class="hidden">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold">New Room ID:</label>
+                    <input type="number" id="new-room-id" class="w-full p-2 border rounded" placeholder="New Room ID" required>
+                </div>
 
-            <label class="block">Check-Out Date:</label>
-            <input type="date" id="checkOut" class="border p-2 w-full mb-3" required>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold">New Check-in Date:</label>
+                    <input type="date" id="new-check-in" class="w-full p-2 border rounded" required>
+                </div>
 
-            <label class="block">Payment Method:</label>
-            <select id="paymentMethod" class="border p-2 w-full mb-3">
-                <option value="cash">Cash</option>
-                <option value="credit card">Credit Card</option>
-                <option value="debit card">Debit Card</option>
-                <option value="online">Online</option>
-            </select>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold">New Check-out Date:</label>
+                    <input type="date" id="new-check-out" class="w-full p-2 border rounded" required>
+                </div>
 
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">Update Booking</button>
-        </form>
+                <button type="submit" class="w-full bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                    Update Booking
+                </button>
+            </form>
+        </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Fetch Booking ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookingId = urlParams.get('id'); // Use 'id' instead of 'bookingId'
+
+        // Fetch Booking Details
+        const fetchBookingDetails = async () => {
+            if (!bookingId) {
+                alert("Booking ID not found in the URL.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Display Booking Details
+                    document.getElementById("current-room-id").textContent = data.room_id;
+                    document.getElementById("check-in-date").textContent = data.check_in;
+                    document.getElementById("check-out-date").textContent = data.check_out;
+
+                    // Show Update Form
+                    document.getElementById("update-booking-form").classList.remove("hidden");
+                } else {
+                    alert(data.message || "Booking not found.");
+                }
+            } catch (error) {
+                console.error("Error fetching booking details:", error);
+                alert("An error occurred while fetching booking details.");
+            }
+        };
+
+        // Update Booking Details
+        document.getElementById("update-booking-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const bookingId = urlParams.get('id');
+        const newRoomId = document.getElementById("new-room-id").value.trim();
+        const newCheckIn = document.getElementById("new-check-in").value;
+        const newCheckOut = document.getElementById("new-check-out").value;
+
+        if (!newRoomId || !newCheckIn || !newCheckOut) {
+            alert("Please fill out all fields.");
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    room_id: newRoomId,
+                    check_in: newCheckIn,
+                    check_out: newCheckOut,
+                }),
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message);
+                // Refresh Booking Details
+                fetchBookingDetails();
+            } else {
+                alert(data.message || "Failed to update booking details.");
+            }
+        } catch (error) {
+            console.error("Error updating booking details:", error);
+            alert("An error occurred while updating booking details.");
+        }
+    });
+
+        // Fetch Booking Details on Page Load
+        fetchBookingDetails();
+    </script>
 </body>
 </html>
