@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Handle Complaints / Special Requests</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold">CheckIn Crew</a>
+            <span class="text-lg" id="staffName">Welcome, Staff Member</span>
+        </div>
+    </nav>
+
+    <!-- Complaints Table -->
+    <div class="container mx-auto my-10 p-6 bg-white shadow-md rounded-lg flex-grow">
+        <h1 class="text-3xl font-bold text-center mb-6">Handle Complaints / Special Requests</h1>
+
+        <!-- Complaints Table -->
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+            <thead>
+                <tr class="bg-gray-100 text-left">
+                    <th class="py-2 px-4 border-b">Customer Name</th>
+                    <th class="py-2 px-4 border-b">Stay Dates</th>
+                    <th class="py-2 px-4 border-b">Complaint / Request</th>
+                    <th class="py-2 px-4 border-b">Action</th>
+                </tr>
+            </thead>
+            <tbody id="complaintsTableBody">
+                <!-- Dynamic table rows will be inserted here by JavaScript -->
+                <tr>
+                    <td class="py-2 px-4 border-b">Sam</td>
+                    <td class="py-2 px-4 border-b">2025-04-10 to 2025-04-15</td>
+                    <td class="py-2 px-4 border-b">Room temperature was too cold.</td>
+                    <td class="py-2 px-4 border-b">
+                        <button class="bg-green-500 hover:bg-green-700 text-white py-1 px-4 rounded-md" onclick="markAsDone(this)">Mark as Done</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="py-2 px-4 border-b">Haleema</td>
+                    <td class="py-2 px-4 border-b">2025-04-12 to 2025-04-18</td>
+                    <td class="py-2 px-4 border-b">Requested extra towels.</td>
+                    <td class="py-2 px-4 border-b">
+                        <button class="bg-green-500 hover:bg-green-700 text-white py-1 px-4 rounded-md" onclick="markAsDone(this)">Mark as Done</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Get the stored staff name from localStorage
+        const staffName = localStorage.getItem("staffName");
+        
+        if (staffName) {
+            document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
+        }
+
+        // Mark Complaint as Done (Front-end simulation)
+        function markAsDone(button) {
+            const row = button.closest('tr');
+            row.style.textDecoration = 'line-through'; // Strike through the row
+            button.disabled = true; // Disable the button after marking as done
+            button.textContent = 'Resolved'; // Change the button text
+        }
+    </script>
+
+</body>
+</html>

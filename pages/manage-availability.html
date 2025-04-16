@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manage Room Availability</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="bg-blue-600 text-white p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="#" class="text-2xl font-bold">CheckIn Crew</a>
+      <span class="text-lg" id="staffName">Welcome, Staff Member</span>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mx-auto my-10 p-6 bg-white shadow-md rounded-lg flex-grow">
+    <h1 class="text-3xl font-bold text-center mb-6">Manage Room Availability</h1>
+
+    <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+      <thead>
+        <tr class="bg-gray-100 text-left">
+          <th class="py-2 px-4 border-b">Room Name</th>
+          <th class="py-2 px-4 border-b">Availability</th>
+          <th class="py-2 px-4 border-b">Action</th>
+        </tr>
+      </thead>
+      <tbody id="roomTableBody">
+        <!-- JavaScript will populate the table -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+    <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const staffName = localStorage.getItem("staffName");
+    if (staffName) {
+      document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
+    }
+
+    const rooms = [
+      "Deluxe 1", "Deluxe 2", "Deluxe 3", "Deluxe 4", "Deluxe 5",
+      "Standard 1", "Standard 2", "Standard 3", "Standard 4", "Standard 5",
+      "Suite 1", "Suite 2", "Suite 3", "Suite 4", "Suite 5"
+    ];
+
+    const roomStatus = {}; // mock status
+    rooms.forEach(room => {
+      // Randomly set half the rooms as booked just for demo
+      roomStatus[room] = Math.random() > 0.5 ? "Booked" : "Free";
+    });
+
+    function toggleAvailability(button, room) {
+      const current = roomStatus[room];
+      const newStatus = current === "Free" ? "Booked" : "Free";
+      roomStatus[room] = newStatus;
+
+      const row = button.closest("tr");
+      const statusCell = row.querySelector(".status");
+      statusCell.textContent = newStatus;
+
+      statusCell.className = `status py-2 px-4 border-b font-semibold ${newStatus === "Free" ? "text-green-600" : "text-red-600"}`;
+      button.textContent = `Mark as ${newStatus === "Free" ? "Booked" : "Free"}`;
+    }
+
+    const tbody = document.getElementById("roomTableBody");
+    rooms.forEach(room => {
+      const status = roomStatus[room];
+      const statusColor = status === "Free" ? "text-green-600" : "text-red-600";
+      const toggleText = status === "Free" ? "Mark as Booked" : "Mark as Free";
+
+      tbody.innerHTML += `
+        <tr>
+          <td class="py-2 px-4 border-b">${room}</td>
+          <td class="status py-2 px-4 border-b font-semibold ${statusColor}">${status}</td>
+          <td class="py-2 px-4 border-b">
+            <button onclick="toggleAvailability(this, '${room}')" class="bg-blue-500 hover:bg-blue-700 text-white py-1 px-4 rounded-md">
+              ${toggleText}
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+  </script>
+
+</body>
+</html>

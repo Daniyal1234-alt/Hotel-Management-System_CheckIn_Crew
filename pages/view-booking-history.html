@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking History</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="bg-blue-600 text-white p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="#" class="text-2xl font-bold">CheckIn Crew</a>
+      <span class="text-lg" id="staffName">Welcome, Staff Member</span>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mx-auto my-10 p-6 bg-white shadow-md rounded-lg flex-grow">
+    <h1 class="text-3xl font-bold text-center mb-6">Booking History</h1>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="py-2 px-4 border-b">Room</th>
+            <th class="py-2 px-4 border-b">Customer Name</th>
+            <th class="py-2 px-4 border-b">Check-In</th>
+            <th class="py-2 px-4 border-b">Check-Out</th>
+            <th class="py-2 px-4 border-b">Status</th>
+          </tr>
+        </thead>
+        <tbody id="bookingHistoryBody">
+          <!-- JavaScript will populate this -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+    <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Optional: Show staff name if stored
+    const staffName = localStorage.getItem("staffName");
+    if (staffName) {
+      document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
+    }
+
+    // Example mock booking history - replace with your database integration
+    const bookings = [
+      {
+        room: "Deluxe 1",
+        customer: "Alice Johnson",
+        checkIn: "2025-04-14",
+        checkOut: "2025-04-16",
+        status: "Completed"
+      },
+      {
+        room: "Suite 2",
+        customer: "Michael Lee",
+        checkIn: "2025-04-15",
+        checkOut: "2025-04-18",
+        status: "On-going"
+      }
+      // You can dynamically fetch and append more entries from DB
+    ];
+
+    const tbody = document.getElementById("bookingHistoryBody");
+
+    bookings.forEach(booking => {
+      const statusColor = booking.status === "Completed" ? "text-green-600" : 
+                          booking.status === "Upcoming" ? "text-blue-600" : 
+                          "text-gray-600";
+
+      tbody.innerHTML += `
+        <tr>
+          <td class="py-2 px-4 border-b">${booking.room}</td>
+          <td class="py-2 px-4 border-b">${booking.customer}</td>
+          <td class="py-2 px-4 border-b">${booking.checkIn}</td>
+          <td class="py-2 px-4 border-b">${booking.checkOut}</td>
+          <td class="py-2 px-4 border-b font-semibold ${statusColor}">${booking.status}</td>
+        </tr>
+      `;
+    });
+  </script>
+
+</body>
+</html>
