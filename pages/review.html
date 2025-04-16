@@ -49,6 +49,7 @@
             const bookingId = getBookingId();
             const rating = document.getElementById("rating").value;
             const comment = document.querySelector("textarea[name='review_text']").value;
+            const messageType = document.querySelector("input[name='message_type']:checked").value;
 
             if (!bookingId) {
                 alert("No booking ID found");
@@ -66,7 +67,8 @@
                     body: JSON.stringify({
                         bookingId: bookingId,
                         rating: parseInt(rating),
-                        comment: comment
+                        comment: comment,
+                        type: messageType
                     })
                 });
 
@@ -118,6 +120,25 @@
                     <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(3)">★</span>
                     <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(4)">★</span>
                     <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(5)">★</span>
+                </div>
+            </div>
+
+            <!-- Message Type Selection -->
+            <div class="mb-8">
+                <label class="block text-gray-700 font-semibold mb-2 text-lg">What type of message is this?</label>
+                <div class="flex space-x-6 justify-center text-gray-700">
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="message_type" value="complaint" required class="form-radio text-blue-500">
+                        <span>Complaint</span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="message_type" value="request" required class="form-radio text-blue-500">
+                        <span>Request</span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="message_type" value="feedback" required class="form-radio text-blue-500">
+                        <span>Feedback</span>
+                    </label>
                 </div>
             </div>
 
