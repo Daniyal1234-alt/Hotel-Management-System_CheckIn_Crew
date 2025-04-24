@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,9 +41,12 @@
     <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
         <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <script>
-        // Get the stored staff name from localStorage
+        // No need for require anymore!
+    
+        // Get the stored staff name from sessionStorage
         let staffName = "Staff Member"; // Default name
         try {
             const userData = sessionStorage.getItem("user");
@@ -57,47 +61,73 @@
             console.error("Error parsing user data:", error);
             // Keep the default name
         }
-
+    
         async function fetchComplaints() {
             try {
-                console.log("Starting to fetch complaints...");
-                const res = await fetch('http://localhost:5000/api/getcomplaint-request');
-                console.log("Fetch response:", res.data);
-                console.log("Response status:", res.status);
-                
-                if (!res.ok) {
-                    throw new Error(`HTTP error! Status: ${res.status}, ${await res.text()}`);
-                }
-                
-                const data = await res.json();
-                console.log("Fetched complaints data:", data);
-                
-            } catch (error) {
-                console.error("Error fetching complaints:", error);
-                
-                // Add a visible error message to the table
-                const tableBody = document.getElementById('complaintsTableBody');
-                if (tableBody) {
+                const res = await axios.get("http://localhost:5000/api/getcomplaintrequest");
+
+                const data = res.data.data;;
+                console.log("Complaints data:", data);
+
+                const tableBody = document.getElementById("complaintsTableBody");
+                tableBody.innerHTML = "";
+
+                if (!Array.isArray(data) || data.length === 0) {
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="4" class="py-4 px-4 text-center text-red-500">
-                                Error loading data: ${error.message}
+                            <td colspan="4" class="py-4 px-4 text-center text-gray-500">
+                                No complaints or special requests at the moment.
                             </td>
                         </tr>
                     `;
+                    return;
                 }
-                
+
+                data.forEach(entry => {
+                    const checkIn = new Date(entry.check_in).toLocaleDateString();
+                    const checkOut = new Date(entry.check_out).toLocaleDateString();
+
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="py-2 px-4 border-b">${entry.customer_name}</td>
+                        <td class="py-2 px-4 border-b">${checkIn} to ${checkOut}</td>
+                        <td class="py-2 px-4 border-b">${entry.message}</td>
+                        <td class="py-2 px-4 border-b">
+                            <button 
+                                onclick="markAsDone('${entry.id}', this)"
+                                class="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded"
+                            >
+                                Mark as Done
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error("Error fetching complaints:", error);
+
+                const tableBody = document.getElementById("complaintsTableBody");
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-4 px-4 text-center text-red-500">
+                            Error loading data: ${error.message}
+                        </td>
+                    </tr>
+                `;
+
                 alert("Error fetching complaints: " + error.message);
             }
         }
 
+
         async function markAsDone(id, button) {
-            const res = await fetch(`/api/updatecomplaint-request/${id}`, {
+            const res = await fetch(`http://localhost:5000/api/updatecomplaint-request/${id}`, {
                 method: "PATCH"
             });
-
+    
             const result = await res.json();
-
+    
             if (result.success) {
                 const row = button.closest('tr');
                 row.style.textDecoration = 'line-through';
@@ -107,8 +137,10 @@
                 alert("Error marking as resolved");
             }
         }
+    
         fetchComplaints();
     </script>
+    
 
 </body>
 </html>

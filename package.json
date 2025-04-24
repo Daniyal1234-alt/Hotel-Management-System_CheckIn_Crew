@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
@@ -30,6 +31,5 @@
   "bugs": {
     "url": "https://github.com/Daniyal1234-alt/checkin-crew/issues"
   },
-  "homepage": "https://github.com/Daniyal1234-alt/checkin-crew#readme",
-  "devDependencies": {}
+  "homepage": "https://github.com/Daniyal1234-alt/checkin-crew#readme"
 }

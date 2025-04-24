@@ -5,7 +5,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const path = require("path");
 const { connect } = require("http2");
-
+const ax = require("axios")
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -43,6 +43,41 @@ app.get("/pages", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+//Getting complaints
+app.get('/api/getcomplaintrequest', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [rows] = await connection.execute(`
+      SELECT cr.id, u.name AS customer_name, b.check_in, b.check_out, cr.type, cr.message, cr.status
+      FROM complaints_requests cr
+      JOIN users u ON cr.user_id = u.id
+      JOIN bookings b ON cr.booking_id = b.id
+      WHERE cr.status != 'resolved'
+      ORDER BY cr.created_at DESC
+    `);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("Database error:", err); // Improved error logging
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+app.patch('/api/updatecomplaint-request/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const connection = await pool.getConnection();
+    await connection.execute(`
+      UPDATE complaints_requests
+      SET status = 'resolved', resolved_at = NOW()
+      WHERE id = ?
+    `, [id]);
+
+    res.json({ success: true, message: 'Marked as resolved' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 // Serve static HTML files from /pages
 const staticPages = ["login", "register", "search", "details", "rooms", "hotel-details", "user-choice","update-booking", "bookings", "history", "review"];
 staticPages.forEach(page => {
@@ -544,43 +579,5 @@ app.post('/api/complaint-request', async (req, res) => {
   } catch (error) {
       console.error("Error inserting complaint/request:", error);
       res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-app.get('/api/getcomplaint-request', async (req, res) => {
-  try {
-    const connection = await pool.getConnection();
-    const [rows] = await connection.execute(`
-      SELECT cr.id, u.name AS customer_name, b.check_in, b.check_out, cr.type, cr.message, cr.status
-      FROM complaints_requests cr
-      JOIN users u ON cr.user_id = u.id
-      JOIN bookings b ON cr.booking_id = b.id
-      WHERE cr.status != 'resolved'
-      ORDER BY cr.created_at DESC
-    `);
-
-    console.log("Complaints data:", rows); // Add this logging
-    console.log("Number of complaints found:", rows.length); // Add this logging
-
-    res.json({ success: true, data: rows });
-  } catch (err) {
-    console.error("Database error:", err); // Improved error logging
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-app.patch('/api/updatecomplaint-request/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const connection = await pool.getConnection();
-    await connection.execute(`
-      UPDATE complaints_requests
-      SET status = 'resolved', resolved_at = NOW()
-      WHERE id = ?
-    `, [id]);
-
-    res.json({ success: true, message: 'Marked as resolved' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
