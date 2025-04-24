@@ -63,3 +63,15 @@ CREATE TABLE IF NOT EXISTS feedback (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS complaints_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  booking_id INT NOT NULL,
+  type VARCHAR(50) NOT NULL, -- 'complaint' or 'request'
+  message TEXT NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'in-progress', 'resolved'
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at TIMESTAMP NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+);

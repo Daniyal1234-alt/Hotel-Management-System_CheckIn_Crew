@@ -31,23 +31,7 @@
                 </tr>
             </thead>
             <tbody id="complaintsTableBody">
-                <!-- Dynamic table rows will be inserted here by JavaScript -->
-                <tr>
-                    <td class="py-2 px-4 border-b">Sam</td>
-                    <td class="py-2 px-4 border-b">2025-04-10 to 2025-04-15</td>
-                    <td class="py-2 px-4 border-b">Room temperature was too cold.</td>
-                    <td class="py-2 px-4 border-b">
-                        <button class="bg-green-500 hover:bg-green-700 text-white py-1 px-4 rounded-md" onclick="markAsDone(this)">Mark as Done</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="py-2 px-4 border-b">Haleema</td>
-                    <td class="py-2 px-4 border-b">2025-04-12 to 2025-04-18</td>
-                    <td class="py-2 px-4 border-b">Requested extra towels.</td>
-                    <td class="py-2 px-4 border-b">
-                        <button class="bg-green-500 hover:bg-green-700 text-white py-1 px-4 rounded-md" onclick="markAsDone(this)">Mark as Done</button>
-                    </td>
-                </tr>
+                
             </tbody>
         </table>
     </div>
@@ -59,19 +43,71 @@
 
     <script>
         // Get the stored staff name from localStorage
-        const staffName = localStorage.getItem("staffName");
-        
-        if (staffName) {
+        let staffName = "Staff Member"; // Default name
+        try {
+            const userData = sessionStorage.getItem("user");
+            if (userData) {
+                const parsedData = JSON.parse(userData);
+                if (parsedData && parsedData.user) {
+                    staffName = parsedData.user;
+                }
+            }
             document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
+        } catch (error) {
+            console.error("Error parsing user data:", error);
+            // Keep the default name
         }
 
-        // Mark Complaint as Done (Front-end simulation)
-        function markAsDone(button) {
-            const row = button.closest('tr');
-            row.style.textDecoration = 'line-through'; // Strike through the row
-            button.disabled = true; // Disable the button after marking as done
-            button.textContent = 'Resolved'; // Change the button text
+        async function fetchComplaints() {
+            try {
+                console.log("Starting to fetch complaints...");
+                const res = await fetch('http://localhost:5000/api/getcomplaint-request');
+                console.log("Fetch response:", res.data);
+                console.log("Response status:", res.status);
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP error! Status: ${res.status}, ${await res.text()}`);
+                }
+                
+                const data = await res.json();
+                console.log("Fetched complaints data:", data);
+                
+            } catch (error) {
+                console.error("Error fetching complaints:", error);
+                
+                // Add a visible error message to the table
+                const tableBody = document.getElementById('complaintsTableBody');
+                if (tableBody) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="py-4 px-4 text-center text-red-500">
+                                Error loading data: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                alert("Error fetching complaints: " + error.message);
+            }
         }
+
+        async function markAsDone(id, button) {
+            const res = await fetch(`/api/updatecomplaint-request/${id}`, {
+                method: "PATCH"
+            });
+
+            const result = await res.json();
+
+            if (result.success) {
+                const row = button.closest('tr');
+                row.style.textDecoration = 'line-through';
+                button.disabled = true;
+                button.textContent = 'Resolved';
+            } else {
+                alert("Error marking as resolved");
+            }
+        }
+        fetchComplaints();
     </script>
 
 </body>

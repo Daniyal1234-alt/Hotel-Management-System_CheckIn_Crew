@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +33,7 @@
             try {
                 const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status} Booking Id: ${bookingId}`);
                 }
                 const booking = await response.json();
                 document.getElementById("room").value = booking.room;
@@ -59,39 +60,72 @@
                 alert("Please select a rating");
                 return;
             }
+            if (messageType === "complaint" || messageType === "request") {
+                try {
+                    const response = await fetch('http://localhost:5000/api/complaint-request', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bookingId: bookingId,
+                            type: messageType,
+                            comment: comment,
+                            userId: JSON.parse(sessionStorage.getItem("user"))?.id // Assuming user ID is stored in session storage
+ // or get it from token
+                        })
+                    });
 
-            try {
-                const response = await fetch('http://localhost:5000/api/feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        bookingId: bookingId,
-                        rating: parseInt(rating),
-                        comment: comment,
-                        type: messageType
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to submit feedback');
+                    const result = await response.json();
+                    if (result.success) {
+                        alert(`${messageType.charAt(0).toUpperCase() + messageType.slice(1)} submitted successfully!`);
+                        window.location.href = "/pages/history.html";
+                    } else {
+                        alert(result.message || "Submission failed");
+                    }
+                } catch (error) {
+                    console.error(`Error submitting ${messageType}:`, error);
+                    alert(`Failed to submit ${messageType}: ` + error.message);
                 }
-                const result = await response.json();
-                if (result.success) {
-                    alert("Feedback submitted successfully!");
-                    window.location.href = "/pages/history.html";
-                } else {
-                    alert(result.message);
-                }
-            } catch (error) {
-                console.error('Error submitting feedback:', error);
-                alert('Failed to submit feedback: ' + error.message);
             }
-        }
+            else if (messageType == "feedback") {
+                try {
+                    const response = await fetch('http://localhost:5000/api/feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bookingId: bookingId,
+                            rating: parseInt(rating),
+                            comment: comment,
+                            type: messageType
+                        })
+                    });
 
-        // Load room details when the page loads
-        document.addEventListener('DOMContentLoaded', fetchRoomDetails);
+                    if (!response.ok) {
+                        throw new Error('Failed to submit feedback');
+                    }
+                    const result = await response.json();
+                    if (result.success) {
+                        alert("Feedback submitted successfully!");
+                        window.location.href = "/pages/history.html";
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error submitting feedback:', error);
+                    alert('Failed to submit feedback: ' + error.message);
+                }
+            }
+            else {
+                alert("Please select a message type");
+                return;
+            }
+
+
+            // Load room details when the page loads
+            document.addEventListener('DOMContentLoaded', fetchRoomDetails);
+        }
     </script>
 </head>
+
 <body class="bg-gray-50 flex flex-col min-h-screen">
 
     <!-- Navbar -->
@@ -104,7 +138,8 @@
     <!-- Review Section -->
     <div class="container mx-auto my-12 p-8 bg-white shadow-lg rounded-lg flex-grow max-w-3xl">
         <h1 class="text-4xl font-extrabold text-center text-blue-600 mb-4">How was your stay?</h1>
-        <p class="text-center text-gray-600 mb-8">Your feedback helps us improve! Please rate your experience and share your thoughts.</p>
+        <p class="text-center text-gray-600 mb-8">Your feedback helps us improve! Please rate your experience and share
+            your thoughts.</p>
         <p id="roomDisplay" class="text-center text-gray-700 font-semibold mb-8"></p>
 
         <form onsubmit="handleSubmit(event)">
@@ -115,11 +150,16 @@
             <div class="mb-8 text-center">
                 <label class="block text-gray-700 font-semibold mb-2 text-lg">Rate Your Experience</label>
                 <div class="flex justify-center space-x-2 text-4xl">
-                    <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(1)">★</span>
-                    <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(2)">★</span>
-                    <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(3)">★</span>
-                    <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(4)">★</span>
-                    <span class="text-gray-400 cursor-pointer star transition duration-300" onclick="setRating(5)">★</span>
+                    <span class="text-gray-400 cursor-pointer star transition duration-300"
+                        onclick="setRating(1)">★</span>
+                    <span class="text-gray-400 cursor-pointer star transition duration-300"
+                        onclick="setRating(2)">★</span>
+                    <span class="text-gray-400 cursor-pointer star transition duration-300"
+                        onclick="setRating(3)">★</span>
+                    <span class="text-gray-400 cursor-pointer star transition duration-300"
+                        onclick="setRating(4)">★</span>
+                    <span class="text-gray-400 cursor-pointer star transition duration-300"
+                        onclick="setRating(5)">★</span>
                 </div>
             </div>
 
@@ -128,15 +168,18 @@
                 <label class="block text-gray-700 font-semibold mb-2 text-lg">What type of message is this?</label>
                 <div class="flex space-x-6 justify-center text-gray-700">
                     <label class="flex items-center space-x-2">
-                        <input type="radio" name="message_type" value="complaint" required class="form-radio text-blue-500">
+                        <input type="radio" name="message_type" value="complaint" required
+                            class="form-radio text-blue-500">
                         <span>Complaint</span>
                     </label>
                     <label class="flex items-center space-x-2">
-                        <input type="radio" name="message_type" value="request" required class="form-radio text-blue-500">
+                        <input type="radio" name="message_type" value="request" required
+                            class="form-radio text-blue-500">
                         <span>Request</span>
                     </label>
                     <label class="flex items-center space-x-2">
-                        <input type="radio" name="message_type" value="feedback" required class="form-radio text-blue-500">
+                        <input type="radio" name="message_type" value="feedback" required
+                            class="form-radio text-blue-500">
                         <span>Feedback</span>
                     </label>
                 </div>
@@ -145,14 +188,14 @@
             <!-- Review Text Area -->
             <div class="mb-12">
                 <label class="block text-gray-700 font-semibold mb-2 text-lg">Tell us about your stay</label>
-                <textarea name="review_text" rows="6" required 
-                    class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                <textarea name="review_text" rows="6" required
+                    class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                     placeholder="Write your review here..."></textarea>
             </div>
 
             <!-- Centered Submit Button -->
             <div class="text-center">
-                <button type="submit" 
+                <button type="submit"
                     class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-md">
                     Submit Review
                 </button>
@@ -166,4 +209,5 @@
     </footer>
 
 </body>
+
 </html>

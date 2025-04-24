@@ -30,5 +30,6 @@
   "bugs": {
     "url": "https://github.com/Daniyal1234-alt/checkin-crew/issues"
   },
-  "homepage": "https://github.com/Daniyal1234-alt/checkin-crew#readme"
+  "homepage": "https://github.com/Daniyal1234-alt/checkin-crew#readme",
+  "devDependencies": {}
 }
