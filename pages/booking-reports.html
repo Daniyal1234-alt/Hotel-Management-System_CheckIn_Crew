@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking Reports</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="bg-blue-600 text-white p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="#" class="text-2xl font-bold">CheckIn Crew</a>
+      <span class="text-lg" id="staffName">Welcome, Admin</span>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mx-auto my-10 p-6 bg-white shadow-md rounded-lg flex-grow">
+    <h1 class="text-3xl font-bold text-center mb-6">Booking Reports & Trends</h1>
+
+    <!-- Booking Reports Table -->
+    <div class="overflow-x-auto mb-10">
+      <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="py-2 px-4 border-b">Booking ID</th>
+            <th class="py-2 px-4 border-b">User Name</th>
+            <th class="py-2 px-4 border-b">Room Number</th>
+            <th class="py-2 px-4 border-b">Check-in Date</th>
+            <th class="py-2 px-4 border-b">Check-out Date</th>
+            <th class="py-2 px-4 border-b">Status</th>
+            <th class="py-2 px-4 border-b">Payment Method</th>
+            <th class="py-2 px-4 border-b">Total Price</th>
+            <th class="py-2 px-4 border-b">Booking Date</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTableBody">
+          <!-- JavaScript will populate this -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Booking Trends Chart -->
+    <div class="my-10">
+      <h2 class="text-2xl font-bold text-center mb-4">Booking Trends (Last 6 Months)</h2>
+      <div class="w-3/4 mx-auto"> <!-- Limit width -->
+        <canvas id="bookingTrendsChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Payment Method Distribution Chart -->
+<!-- Payment Method Distribution Chart -->
+<!-- Payment Method Distribution Chart -->
+<div class="my-10">
+    <h2 class="text-2xl font-bold text-center mb-4">Payment Method Distribution</h2>
+    <!-- Adjust container width for smaller chart -->
+    <div class="w-full flex justify-center">
+        <canvas id="paymentMethodChart" style="width: 100%; height: 100%; max-width: 500px; max-height: 500px;"></canvas> <!-- Make it fit better -->
+    </div>
+</div>
+
+
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+    <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Sample Data
+    let bookings = [
+      { id: 1, user_id: 2, room_id: 101, check_in: "2025-05-10", check_out: "2025-05-15", status: "confirmed", payment_method: "credit card", total_price: 500.00, booking_date: "2025-04-15T08:30:00Z" },
+      { id: 2, user_id: 3, room_id: 102, check_in: "2025-05-20", check_out: "2025-05-25", status: "checked-in", payment_method: "cash", total_price: 450.00, booking_date: "2025-04-16T10:45:00Z" },
+      { id: 3, user_id: 1, room_id: 103, check_in: "2025-06-01", check_out: "2025-06-05", status: "cancelled", payment_method: "debit card", total_price: 300.00, booking_date: "2025-04-18T14:00:00Z" }
+    ];
+
+    // Sample user data (replace with actual user data fetch)
+    function getUserById(userId) {
+      const users = [
+        { id: 1, name: "John Doe" },
+        { id: 2, name: "Jane Smith" },
+        { id: 3, name: "Admin User" }
+      ];
+      return users.find(user => user.id === userId);
+    }
+
+    // Sample room data (replace with actual room data fetch)
+    function getRoomById(roomId) {
+      const rooms = [
+        { id: 101, number: 101 },
+        { id: 102, number: 102 },
+        { id: 103, number: 103 }
+      ];
+      return rooms.find(room => room.id === roomId);
+    }
+
+    // Populate Booking Table
+    const bookingTableBody = document.getElementById("bookingTableBody");
+    function populateBookingTable() {
+      bookingTableBody.innerHTML = '';
+      bookings.forEach(booking => {
+        const user = getUserById(booking.user_id); // Replace with your method to fetch user details
+        const room = getRoomById(booking.room_id); // Replace with your method to fetch room details
+        bookingTableBody.innerHTML += `
+          <tr>
+            <td class="py-2 px-4 border-b">${booking.id}</td>
+            <td class="py-2 px-4 border-b">${user ? user.name : 'N/A'}</td>
+            <td class="py-2 px-4 border-b">${room ? room.number : 'N/A'}</td>
+            <td class="py-2 px-4 border-b">${new Date(booking.check_in).toLocaleDateString()}</td>
+            <td class="py-2 px-4 border-b">${new Date(booking.check_out).toLocaleDateString()}</td>
+            <td class="py-2 px-4 border-b">${booking.status}</td>
+            <td class="py-2 px-4 border-b">${booking.payment_method}</td>
+            <td class="py-2 px-4 border-b">$${booking.total_price.toFixed(2)}</td>
+            <td class="py-2 px-4 border-b">${new Date(booking.booking_date).toLocaleString()}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // Booking Trends Chart
+    const bookingTrendsChart = document.getElementById('bookingTrendsChart').getContext('2d');
+    const bookingTrendsData = {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      datasets: [{
+        label: 'Bookings per Month',
+        data: [10, 20, 15, 25, 30, 35], // Replace with actual booking count data
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    };
+    const bookingTrendsConfig = {
+      type: 'line',
+      data: bookingTrendsData,
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    };
+    new Chart(bookingTrendsChart, bookingTrendsConfig);
+
+    // Payment Method Distribution Chart
+    const paymentMethodChart = document.getElementById('paymentMethodChart').getContext('2d');
+    const paymentMethodData = {
+      labels: ['Cash', 'Credit Card', 'Debit Card', 'Online'],
+      datasets: [{
+        label: 'Payment Methods',
+        data: [5, 15, 10, 7], // Replace with actual payment method data
+        backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)', 'rgba(75, 192, 192, 0.2)'],
+        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)'],
+        borderWidth: 1
+      }]
+    };
+    const paymentMethodConfig = {
+      type: 'pie',
+      data: paymentMethodData,
+      options: {
+        responsive: true,
+      }
+    };
+    new Chart(paymentMethodChart, paymentMethodConfig);
+
+    // Initialize the booking table
+    populateBookingTable();
+  </script>
+
+</body>
+</html>
