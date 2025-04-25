@@ -4,7 +4,8 @@ const bcrypt = require("bcryptjs");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const path = require("path");
-
+const { connect } = require("http2");
+const ax = require("axios")
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -42,6 +43,41 @@ app.get("/pages", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+//Getting complaints
+app.get('/api/getcomplaintrequest', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [rows] = await connection.execute(`
+      SELECT cr.id, u.name AS customer_name, b.check_in, b.check_out, cr.type, cr.message, cr.status
+      FROM complaints_requests cr
+      JOIN users u ON cr.user_id = u.id
+      JOIN bookings b ON cr.booking_id = b.id
+      WHERE cr.status != 'resolved'
+      ORDER BY cr.created_at DESC
+    `);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("Database error:", err); // Improved error logging
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+app.patch('/api/updatecomplaint-request/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const connection = await pool.getConnection();
+    await connection.execute(`
+      UPDATE complaints_requests
+      SET status = 'resolved', resolved_at = NOW()
+      WHERE id = ?
+    `, [id]);
+
+    res.json({ success: true, message: 'Marked as resolved' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 // Serve static HTML files from /pages
 const staticPages = ["login", "register", "search", "details", "rooms", "hotel-details", "user-choice","update-booking", "bookings", "history", "review"];
 staticPages.forEach(page => {
@@ -277,7 +313,7 @@ app.post('/api/bookings/:id/checkout', async (req, res) => {
   const bookingId = req.params.id;
   try {
     const [result] = await pool.execute(
-      `UPDATE bookings SET status = 'checked-out' WHERE id = ? AND status = 'checked-in'`,
+      `UPDATE bookings SET status = 'checked-out' WHERE id = ? AND status = 'checked-in' OR status = 'confirmed'`,
       [bookingId]
     );
     if (result.affectedRows === 0) {
@@ -380,12 +416,31 @@ app.post("/login", async (req, res) => {
       return res.json({ success: false, message: "User not found" });
     }
     const user = rows[0];
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    let passwordMatch = false;
+
+    // Check if stored password is hashed (starts with $2)
+    if (user.password_hash.startsWith('$2')) {
+      passwordMatch = await bcrypt.compare(password, user.password_hash);
+    } else {
+      // fallback: compare raw strings (NOT secure — for legacy only)
+      passwordMatch = password === user.password_hash;
+    }
+
     if (!passwordMatch) {
       return res.json({ success: false, message: "Invalid password" });
     }
     const token = { id: user.id,name: user.name, email: user.email, role: user.role };
-    const redirectPath = user.role === "admin" ? "/admin-dashboard.html" : "/index.html";
+    redirectPath = "" ;
+
+    if (user.role === "admin") {
+      redirectPath = "/admin-dashboard.html";
+    }
+    else if (user.role === "staff") {
+      redirectPath = "/staff-dashboard.html";
+    }
+    else{
+      redirectPath = "/index.html";
+    }
     res.json({ success: true, redirectTo: redirectPath, user: token });
   } catch (err) {
     console.error("Login error:", err);
@@ -502,4 +557,27 @@ app.get("/*", (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+//Handling Complaints
+app.post('/api/complaint-request', async (req, res) => {
+  const { userId, bookingId, type, comment } = req.body;
+
+  if (!userId || !bookingId || !type || !comment) {
+      return res.status(400).json({ success: false, message: "All fields are required " + bookingId + type + comment + userId  });
+  }
+  const connection = await pool.getConnection();
+  try {
+        const [result] = await connection.execute(
+          `INSERT INTO complaints_requests (user_id, booking_id, type, message, status)
+          VALUES (?, ?, ?, ?, ?)`,
+          [userId, bookingId, type, comment, "pending"]
+      );
+  
+
+      res.status(201).json({ success: true, message: "Submitted successfully", id: result.insertId });
+  } catch (error) {
+      console.error("Error inserting complaint/request:", error);
+      res.status(500).json({ success: false, message: "Server error" });
+  }
 });
