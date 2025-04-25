@@ -12,7 +12,7 @@
   
     async function fetchbookings() {
       try {
-        const res = await axios.get("http://localhost:5000/api/allbookings");
+        const res = await axios.get("http://localhost:5000/api/allconfirmedbookings");
         bookings = res.data.data;  // Axios automatically parses JSON
         populateTable(bookings);
       } catch (error) {
