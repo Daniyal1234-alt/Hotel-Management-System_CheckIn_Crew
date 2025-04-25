@@ -75,3 +75,13 @@ CREATE TABLE IF NOT EXISTS complaints_requests (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
+
+INSERT INTO users (name, email, password_hash, role)
+VALUES ('Ali Admin', 'admin@example.com', '123', 'admin');
+
+-- 2. Get the inserted user's ID (in SQL clients that support LAST_INSERT_ID)
+SET @user_id = LAST_INSERT_ID();
+
+-- 3. Insert into admins table
+INSERT INTO admins (user_id, access_level)
+VALUES (@user_id, 'superadmin');

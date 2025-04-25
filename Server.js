@@ -153,7 +153,7 @@ app.get('/api/rooms', async (req, res) => {
   }
 });
 // API to get all bookings with feedback status
-app.get('/api/allbookings', async (req, res) => {
+app.get('/api/allconfirmedbookings', async (req, res) => {
   try {
       
       const [rows] = await pool.execute(`
@@ -177,6 +177,20 @@ app.get('/api/allbookings', async (req, res) => {
       res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 });
+//Get room id from room number 
+app.get("/api/roomidbyroomnumber/:roomNumber", async (req, res) => {
+  const { roomNumber } = req.params;
+  try {
+    const [rows] = await pool.execute("SELECT id FROM rooms WHERE room_number = ?", [roomNumber]);
+    if (rows.length === 0) return res.status(404).json({ message: "Room not found" });
+    res.json({ room_id: rows[0].id });
+  } catch (err) {
+    console.error("Error fetching room ID:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 // API to get all bookings with feedback status
 app.post('/api/bookings', async (req, res) => {
   try {
