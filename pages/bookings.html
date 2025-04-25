@@ -130,7 +130,7 @@
             const checkOut = document.getElementById("check-out").value;
             const room = document.getElementById("room-type").selectedOptions[0].text;
             const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || "Not selected";
-            const price = document.getElementById("room-type").selectedOptions[0].getAttribute("data-price") || 0; // Get price from option
+            const price = document.getElementById("room-type").selectedOptions[0].getAttribute("data-price") || 200; // Get price from option
 
             try {
                 console.log(JSON.stringify({ name, email, phone, checkIn, checkOut, room, paymentMethod, price }));

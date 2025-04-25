@@ -152,7 +152,31 @@ app.get('/api/rooms', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch rooms' });
   }
 });
+// API to get all bookings with feedback status
+app.get('/api/allbookings', async (req, res) => {
+  try {
+      
+      const [rows] = await pool.execute(`
+          SELECT 
+              bookings.id,
+              users.name AS customerName,
+              rooms.room_number AS room,
+              bookings.check_in AS checkIn,
+              bookings.check_out AS checkOut,
+              bookings.status,
+              EXISTS (SELECT 1 FROM feedback WHERE feedback.booking_id = bookings.id) AS hasFeedback
+          FROM bookings
+          JOIN rooms ON bookings.room_id = rooms.id 
+          JOIN users ON bookings.user_id = users.id
+          WHERE bookings.status!="cancelled"
+      `);
 
+      res.json({ success: true, data: rows });
+  } catch (err) {
+      console.error("Error fetching bookings:", err);
+      res.status(500).json({ success: false, message: "Failed to fetch bookings" });
+  }
+});
 // API to get all bookings with feedback status
 app.post('/api/bookings', async (req, res) => {
   try {
@@ -489,10 +513,12 @@ app.get('/api/bookings', async (req, res) => {
 
 // API to Book a Room
 app.post("/book-room", async (req, res) => {
-  const { name, email, phone, checkIn, checkOut, roomType, paymentMethod } = req.body;
-  if (!name || !email || !phone || !checkIn || !checkOut || !roomType || !paymentMethod) {
+  const { name, email, phone, checkIn, checkOut, room, paymentMethod } = req.body;
+
+  if (!name || !email || !phone || !checkIn || !checkOut || !room || !paymentMethod) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
   }
+
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -505,7 +531,7 @@ app.post("/book-room", async (req, res) => {
     }
     const [roomResult] = await connection.execute(
       "SELECT id, price FROM rooms WHERE type = ? AND status = 'available' LIMIT 1",
-      [roomType]
+      [room]
     );
     if (roomResult.length === 0) {
       await connection.rollback();

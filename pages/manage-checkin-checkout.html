@@ -5,31 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Manage Check-In/Out</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
   <script>
-    let mockBookings = [
-      { id: 'B001', customerName: 'John Doe', room: '101', checkedIn: false, checkedOut: false },
-      { id: 'B002', customerName: 'Jane Smith', room: '203', checkedIn: true, checkedOut: false },
-      { id: 'B003', customerName: 'Ali Khan', room: '305', checkedIn: true, checkedOut: true }
-    ];
-
-    document.addEventListener("DOMContentLoaded", () => {
-      populateTable(mockBookings);
-    });
-
-    function populateTable(bookings) {
+    let bookings = [];
+  
+    async function fetchbookings() {
+      try {
+        const res = await axios.get("http://localhost:5000/api/allbookings");
+        bookings = res.data.data;  // Axios automatically parses JSON
+        populateTable(bookings);
+      } catch (error) {
+        console.error("Error while fetching bookings: ", error.message);
+      }
+    }
+  
+    function populateTable(data) {
       const tableBody = document.getElementById("bookingTableBody");
       tableBody.innerHTML = "";
+  
+      data.forEach(booking => {
+        let checkedIn = false;
+        let checkedOut = false;
 
-      bookings.forEach(booking => {
+        if (booking.status === 'checked-in') {
+          checkedIn = true;
+        } else if (booking.status === 'checked-out') {
+          checkedIn = true;
+          checkedOut = true;
+        }
         const row = document.createElement("tr");
         row.className = "border-b";
-
+  
         row.innerHTML = `
           <td class="px-4 py-2">${booking.id}</td>
           <td class="px-4 py-2">${booking.customerName}</td>
           <td class="px-4 py-2">${booking.room}</td>
-          <td class="px-4 py-2 text-center">${booking.checkedIn ? "✅" : "❌"}</td>
-          <td class="px-4 py-2 text-center">${booking.checkedOut ? "✅" : "❌"}</td>
+          <td class="px-4 py-2 text-center">${checkedIn ? "✅" : "❌"}</td>
+          <td class="px-4 py-2 text-center">${checkedOut ? "✅" : "❌"}</td>
           <td class="px-4 py-2 text-center space-x-2">
             <button onclick="updateStatus('${booking.id}', 'checkin')" class="bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Check-In</button>
             <button onclick="updateStatus('${booking.id}', 'checkout')" class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">Check-Out</button>
@@ -38,21 +51,36 @@
         tableBody.appendChild(row);
       });
     }
+    async function updateStatus(bookingId, action) {
+      try {
+        const endpoint = `http://localhost:5000/api/bookings/${bookingId}/${action}`;
+        const res = await axios.post(endpoint);
 
-    function updateStatus(bookingId, action) {
-      const booking = mockBookings.find(b => b.id === bookingId);
-      if (!booking) return;
+        if (res.data.success) {
+          // Update status locally for instant UI feedback
+          const booking = bookings.find(b => b.id === bookingId);
+          if (booking) {
+            if (action === 'checkin') {
+              booking.status = 'checked-in';
+            } else if (action === 'checkout') {
+              booking.status = 'checked-out';
+            }
+          }
 
-      if (action === 'checkin') {
-        booking.checkedIn = true;
-      } else if (action === 'checkout') {
-        booking.checkedOut = true;
+          alert(`${action === 'checkin' ? 'Check-In' : 'Check-Out'} successful`);
+          populateTable(bookings);
+        } else {
+          alert(`❌ Failed: ${res.data.message}`);
+        }
+      } catch (error) {
+        console.error(`Error during ${action}:`, error);
+        alert(`⚠️ Error during ${action}. Already ${action}`);
       }
-
-      alert(`${action === 'checkin' ? 'Check-In' : 'Check-Out'} successful for ${booking.customerName}`);
-      populateTable(mockBookings);
     }
+
+    window.onload = fetchbookings;
   </script>
+  
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
   <!-- Navbar -->
