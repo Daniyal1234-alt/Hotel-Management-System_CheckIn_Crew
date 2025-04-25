@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modify or Cancel Booking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    let mockBookings = [
+      { id: 'B001', customerName: 'John Doe', room: '101', checkIn: '2025-05-01', checkOut: '2025-05-04', status: 'active' },
+      { id: 'B002', customerName: 'Jane Smith', room: '203', checkIn: '2025-05-03', checkOut: '2025-05-05', status: 'active' },
+      { id: 'B003', customerName: 'Ali Khan', room: '305', checkIn: '2025-05-04', checkOut: '2025-05-05', status: 'active' }
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      populateTable();
+    });
+
+    function populateTable() {
+      const tableBody = document.getElementById("bookingTableBody");
+      tableBody.innerHTML = "";
+
+      mockBookings.forEach(booking => {
+        const row = document.createElement("tr");
+        row.className = "border-b";
+
+        let actions = "";
+        if (booking.status === "cancelled") {
+          actions = `<span class="text-red-600 font-semibold">Cancelled</span>`;
+        } else {
+          actions = `
+            <button onclick="showModifyForm('${booking.id}')" class="bg-yellow-500 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm">Modify</button>
+            <button onclick="cancelBooking('${booking.id}')" class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded text-sm ml-2">Cancel</button>
+          `;
+        }
+
+        row.innerHTML = `
+          <td class="px-4 py-2">${booking.id}</td>
+          <td class="px-4 py-2">${booking.customerName}</td>
+          <td class="px-4 py-2">${booking.room}</td>
+          <td class="px-4 py-2">${booking.checkIn}</td>
+          <td class="px-4 py-2">${booking.checkOut}</td>
+          <td class="px-4 py-2 text-center space-x-2">${actions}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function cancelBooking(id) {
+      const booking = mockBookings.find(b => b.id === id);
+      if (booking) {
+        booking.status = "cancelled";
+        alert(`Booking ${id} has been cancelled.`);
+        populateTable();
+        hideModifyForm();
+      }
+    }
+
+    function showModifyForm(id) {
+      const booking = mockBookings.find(b => b.id === id);
+      if (!booking || booking.status === 'cancelled') return;
+
+      document.getElementById("modifyFormContainer").classList.remove("hidden");
+      document.getElementById("modifyId").value = booking.id;
+      document.getElementById("modifyName").value = booking.customerName;
+      document.getElementById("modifyRoom").value = booking.room;
+      document.getElementById("modifyCheckIn").value = booking.checkIn;
+      document.getElementById("modifyCheckOut").value = booking.checkOut;
+    }
+
+    function hideModifyForm() {
+      document.getElementById("modifyFormContainer").classList.add("hidden");
+    }
+
+    function saveModifications() {
+      const id = document.getElementById("modifyId").value;
+      const name = document.getElementById("modifyName").value;
+      const room = document.getElementById("modifyRoom").value;
+      const checkIn = document.getElementById("modifyCheckIn").value;
+      const checkOut = document.getElementById("modifyCheckOut").value;
+
+      const booking = mockBookings.find(b => b.id === id);
+      if (booking && booking.status !== "cancelled") {
+        booking.customerName = name;
+        booking.room = room;
+        booking.checkIn = checkIn;
+        booking.checkOut = checkOut;
+        alert(`Booking ${id} updated.`);
+      }
+
+      populateTable();
+      hideModifyForm();
+    }
+  </script>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+  <!-- Navbar -->
+  <nav class="bg-blue-600 text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Booking Manager</h1>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mx-auto my-8 p-6 bg-white shadow-md rounded-lg flex-grow">
+    <h2 class="text-3xl font-bold mb-6 text-center text-blue-700">Modify or Cancel Booking</h2>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white border border-gray-200">
+        <thead>
+          <tr class="bg-gray-200 text-gray-700 text-left">
+            <th class="px-4 py-2">Booking ID</th>
+            <th class="px-4 py-2">Customer Name</th>
+            <th class="px-4 py-2">Room</th>
+            <th class="px-4 py-2">Check-In</th>
+            <th class="px-4 py-2">Check-Out</th>
+            <th class="px-4 py-2 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTableBody">
+          <!-- Rows inserted dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modify Form -->
+    <div id="modifyFormContainer" class="mt-8 hidden border-t pt-6">
+      <h3 class="text-xl font-semibold mb-4 text-gray-800">Modify Booking</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input id="modifyId" type="hidden" />
+        <div>
+          <label class="block text-gray-700">Customer Name</label>
+          <input id="modifyName" type="text" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-gray-700">Room</label>
+          <input id="modifyRoom" type="text" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-gray-700">Check-In</label>
+          <input id="modifyCheckIn" type="date" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-gray-700">Check-Out</label>
+          <input id="modifyCheckOut" type="date" class="w-full px-3 py-2 border rounded" />
+        </div>
+      </div>
+      <div class="mt-4 space-x-2">
+        <button onclick="saveModifications()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save Changes</button>
+        <button onclick="hideModifyForm()" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+    <p>© 2025 Booking Manager. All rights reserved.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manage Check-In/Out</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    let mockBookings = [
+      { id: 'B001', customerName: 'John Doe', room: '101', checkedIn: false, checkedOut: false },
+      { id: 'B002', customerName: 'Jane Smith', room: '203', checkedIn: true, checkedOut: false },
+      { id: 'B003', customerName: 'Ali Khan', room: '305', checkedIn: true, checkedOut: true }
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      populateTable(mockBookings);
+    });
+
+    function populateTable(bookings) {
+      const tableBody = document.getElementById("bookingTableBody");
+      tableBody.innerHTML = "";
+
+      bookings.forEach(booking => {
+        const row = document.createElement("tr");
+        row.className = "border-b";
+
+        row.innerHTML = `
+          <td class="px-4 py-2">${booking.id}</td>
+          <td class="px-4 py-2">${booking.customerName}</td>
+          <td class="px-4 py-2">${booking.room}</td>
+          <td class="px-4 py-2 text-center">${booking.checkedIn ? "✅" : "❌"}</td>
+          <td class="px-4 py-2 text-center">${booking.checkedOut ? "✅" : "❌"}</td>
+          <td class="px-4 py-2 text-center space-x-2">
+            <button onclick="updateStatus('${booking.id}', 'checkin')" class="bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Check-In</button>
+            <button onclick="updateStatus('${booking.id}', 'checkout')" class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">Check-Out</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function updateStatus(bookingId, action) {
+      const booking = mockBookings.find(b => b.id === bookingId);
+      if (!booking) return;
+
+      if (action === 'checkin') {
+        booking.checkedIn = true;
+      } else if (action === 'checkout') {
+        booking.checkedOut = true;
+      }
+
+      alert(`${action === 'checkin' ? 'Check-In' : 'Check-Out'} successful for ${booking.customerName}`);
+      populateTable(mockBookings);
+    }
+  </script>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+  <!-- Navbar -->
+  <nav class="bg-blue-600 text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">CheckIn Crew</h1>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mx-auto my-8 p-6 bg-white shadow-md rounded-lg flex-grow">
+    <h2 class="text-3xl font-bold mb-6 text-center text-blue-700">Manage Check-In / Check-Out</h2>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white border border-gray-200">
+        <thead>
+          <tr class="bg-gray-200 text-gray-700 text-left">
+            <th class="px-4 py-2">Booking ID</th>
+            <th class="px-4 py-2">Customer Name</th>
+            <th class="px-4 py-2">Room</th>
+            <th class="px-4 py-2 text-center">Checked In</th>
+            <th class="px-4 py-2 text-center">Checked Out</th>
+            <th class="px-4 py-2 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTableBody">
+          <!-- Rows will be inserted here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
+    <p>© 2025 CheckIn Crew. All rights reserved.</p>
+  </footer>
+</body>
+</html>
