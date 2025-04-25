@@ -40,52 +40,92 @@
 
   <!-- Footer -->
   <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-    <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    <p>© 2025 CheckIn Crew. All rights reserved.</p>
   </footer>
 
   <script>
-    // Optional: Show staff name if stored
+    // Set staff name from localStorage
     const staffName = localStorage.getItem("staffName");
     if (staffName) {
       document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
     }
 
-    // Example mock booking history - replace with your database integration
-    const bookings = [
-      {
-        room: "Deluxe 1",
-        customer: "Alice Johnson",
-        checkIn: "2025-04-14",
-        checkOut: "2025-04-16",
-        status: "Completed"
-      },
-      {
-        room: "Suite 2",
-        customer: "Michael Lee",
-        checkIn: "2025-04-15",
-        checkOut: "2025-04-18",
-        status: "On-going"
+    // Function to format dates to YYYY-MM-DD
+    function formatDate(dateString) {
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          console.warn('Invalid date:', dateString);
+          return dateString;
+        }
+        return date.toISOString().split('T')[0];
+      } catch (error) {
+        console.error('Date formatting error:', error, dateString);
+        return dateString;
       }
-      // You can dynamically fetch and append more entries from DB
-    ];
+    }
 
-    const tbody = document.getElementById("bookingHistoryBody");
+    // Function to map server status to display status and color
+    function getStatusDisplay(status) {
+      switch (status.toLowerCase()) {
+        case 'confirmed':
+          return { text: 'Upcoming', color: 'text-blue-600' };
+        case 'checked-in':
+          return { text: 'On-going', color: 'text-gray-600' };
+        case 'checked-out':
+          return { text: 'Completed', color: 'text-green-600' };
+        case 'cancelled':
+          return { text: 'Cancelled', color: 'text-red-600' };
+        default:
+          return { text: status, color: 'text-gray-600' };
+      }
+    }
 
-    bookings.forEach(booking => {
-      const statusColor = booking.status === "Completed" ? "text-green-600" : 
-                          booking.status === "Upcoming" ? "text-blue-600" : 
-                          "text-gray-600";
+    // Function to load bookings from the server
+    async function loadBookings() {
+      try {
+        console.log('Fetching bookings from /api/booking-history...');
+        const response = await fetch('/api/booking-history');
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch bookings: ${response.statusText}`);
+        }
+        const { success, data: bookings } = await response.json();
+        console.log('Bookings data:', bookings);
+        if (!success) {
+          throw new Error('Server returned an error');
+        }
+        const tbody = document.getElementById('bookingHistoryBody');
+        tbody.innerHTML = '';
+        if (bookings.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-2 px-4 text-center text-gray-600">No bookings found.</td></tr>`;
+          return;
+        }
+        bookings.forEach(booking => {
+          console.log('Processing booking:', booking);
+          const { text: displayStatus, color: statusColor } = getStatusDisplay(booking.status);
+          const checkIn = formatDate(booking.checkIn);
+          const checkOut = formatDate(booking.checkOut);
+          const row = `
+            <tr>
+              <td class="py-2 px-4 border-b">${booking.room}</td>
+              <td class="py-2 px-4 border-b">${booking.customerName}</td>
+              <td class="py-2 px-4 border-b">${checkIn}</td>
+              <td class="py-2 px-4 border-b">${checkOut}</td>
+              <td class="py-2 px-4 border-b font-semibold ${statusColor}">${displayStatus}</td>
+            </tr>
+          `;
+          tbody.innerHTML += row;
+        });
+      } catch (error) {
+        console.error('Error loading bookings:', error);
+        const tbody = document.getElementById('bookingHistoryBody');
+        tbody.innerHTML = `<tr><td colspan="5" class="py-2 px-4 text-center text-red-600">Failed to load bookings. Please try again later.</td></tr>`;
+      }
+    }
 
-      tbody.innerHTML += `
-        <tr>
-          <td class="py-2 px-4 border-b">${booking.room}</td>
-          <td class="py-2 px-4 border-b">${booking.customer}</td>
-          <td class="py-2 px-4 border-b">${booking.checkIn}</td>
-          <td class="py-2 px-4 border-b">${booking.checkOut}</td>
-          <td class="py-2 px-4 border-b font-semibold ${statusColor}">${booking.status}</td>
-        </tr>
-      `;
-    });
+    // Load bookings when the page loads
+    loadBookings();
   </script>
 
 </body>

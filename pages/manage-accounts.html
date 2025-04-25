@@ -66,14 +66,16 @@
 
   <!-- Footer -->
   <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-    <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    <p>© 2025 CheckIn Crew. All rights reserved.</p>
   </footer>
 
-  <!-- Add Staff Modal -->
+  <!-- Add/Edit Staff Modal -->
   <div id="staffModal" class="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
       <h2 class="text-2xl font-bold mb-4" id="staffModalTitle">Add Staff</h2>
       <form id="staffForm">
+        <input type="hidden" id="staffId" name="staffId">
+        <input type="hidden" id="userId" name="userId">
         <div class="mb-4">
           <label for="staffName" class="block text-gray-700">Name</label>
           <input type="text" id="staffName" name="staffName" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
@@ -102,104 +104,264 @@
     </div>
   </div>
 
+  <!-- Edit User Modal -->
+  <div id="userModal" class="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
+      <h2 class="text-2xl font-bold mb-4">Edit User</h2>
+      <form id="userForm">
+        <input type="hidden" id="userIdEdit" name="userId">
+        <div class="mb-4">
+          <label for="userName" class="block text-gray-700">Name</label>
+          <input type="text" id="userName" name="userName" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
+        </div>
+        <div class="mb-4">
+          <label for="userEmail" class="block text-gray-700">Email</label>
+          <input type="email" id="userEmail" name="userEmail" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
+        </div>
+        <div class="flex justify-end">
+          <button type="button" onclick="closeUserModal()" class="bg-gray-500 hover:bg-gray-700 text-white py-1 px-4 rounded-md mr-2">Cancel</button>
+          <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded-md">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
+    // Set admin name from localStorage
     const staffName = localStorage.getItem("staffName");
     if (staffName) {
       document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
     }
 
-    // Sample user data (replace with data from your backend)
-    let users = [
-      { id: 1, name: "John Doe", email: "john@example.com", created_at: "2025-01-15T10:00:00Z", role: "guest" },
-      { id: 2, name: "Jane Smith", email: "jane@example.com", created_at: "2025-03-10T12:30:00Z", role: "staff" },
-      { id: 3, name: "Admin User", email: "admin@example.com", created_at: "2025-01-01T08:00:00Z", role: "admin" }
-    ];
-
-    // Sample staff data (replace with data from your backend)
-    let staff = [
-      { id: 1, user_id: 2, position: "Receptionist", salary: 2500.00, hire_date: "2020-05-15" },
-      { id: 2, user_id: 3, position: "Manager", salary: 4000.00, hire_date: "2018-09-10" }
-    ];
-
-    const userTableBody = document.getElementById("userTableBody");
-    const staffTableBody = document.getElementById("staffTableBody");
-
-    // Function to populate the user accounts table
-    function populateUserTable() {
-      userTableBody.innerHTML = '';
-      users.forEach(user => {
-        userTableBody.innerHTML += `
-          <tr>
-            <td class="py-2 px-4 border-b">${user.name}</td>
-            <td class="py-2 px-4 border-b">${user.email}</td>
-            <td class="py-2 px-4 border-b">${new Date(user.created_at).toLocaleString()}</td>
-            <td class="py-2 px-4 border-b">
-              <button onclick="openEditUserModal(${user.id})" class="bg-yellow-500 hover:bg-yellow-700 text-white py-1 px-4 rounded-md">Edit</button>
-              <button onclick="deleteUser(${user.id})" class="bg-red-500 hover:bg-red-700 text-white py-1 px-4 rounded-md ml-2">Delete</button>
-            </td>
-          </tr>
-        `;
-      });
+    // Function to format date to locale string
+    function formatDate(dateString) {
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          console.warn('Invalid date:', dateString);
+          return dateString;
+        }
+        return date.toLocaleString();
+      } catch (error) {
+        console.error('Date formatting error:', error, dateString);
+        return dateString;
+      }
     }
 
-    // Function to populate the staff accounts table
-    function populateStaffTable() {
-      staffTableBody.innerHTML = '';
-      staff.forEach(staffMember => {
-        const user = users.find(u => u.id === staffMember.user_id);
-        staffTableBody.innerHTML += `
-          <tr>
-            <td class="py-2 px-4 border-b">${user.name}</td>
-            <td class="py-2 px-4 border-b">${user.email}</td>
-            <td class="py-2 px-4 border-b">${staffMember.position}</td>
-            <td class="py-2 px-4 border-b">$${staffMember.salary.toFixed(2)}</td>
-            <td class="py-2 px-4 border-b">${staffMember.hire_date}</td>
-            <td class="py-2 px-4 border-b">
-              <button onclick="openEditStaffModal(${staffMember.id})" class="bg-yellow-500 hover:bg-yellow-700 text-white py-1 px-4 rounded-md">Edit</button>
-              <button onclick="deleteStaff(${staffMember.id})" class="bg-red-500 hover:bg-red-700 text-white py-1 px-4 rounded-md ml-2">Delete</button>
-            </td>
-          </tr>
-        `;
-      });
+    // Fetch and populate user accounts
+    async function fetchUsers() {
+      try {
+        console.log('Fetching users from /api/users...');
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch users: ${response.statusText}`);
+        }
+        const { success, data: users } = await response.json();
+        console.log('Users data:', users);
+        if (!success) {
+          throw new Error('Server returned an error');
+        }
+        const userTableBody = document.getElementById('userTableBody');
+        userTableBody.innerHTML = '';
+        if (users.length === 0) {
+          userTableBody.innerHTML = `<tr><td colspan="4" class="py-2 px-4 text-center text-gray-600">No users found.</td></tr>`;
+          return;
+        }
+        users.forEach(user => {
+          userTableBody.innerHTML += `
+            <tr>
+              <td class="py-2 px-4 border-b">${user.name}</td>
+              <td class="py-2 px-4 border-b">${user.email}</td>
+              <td class="py-2 px-4 border-b">${formatDate(user.created_at)}</td>
+              <td class="py-2 px-4 border-b">
+                <button onclick="openEditUserModal(${user.id}, '${user.name}', '${user.email}')" class="bg-yellow-500 hover:bg-yellow-700 text-white py-1 px-4 rounded-md">Edit</button>
+                <button onclick="deleteUser(${user.id})" class="bg-red-500 hover:bg-red-700 text-white py-1 px-4 rounded-md ml-2">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        const userTableBody = document.getElementById('userTableBody');
+        userTableBody.innerHTML = `<tr><td colspan="4" class="py-2 px-4 text-center text-red-600">Failed to load users. Please try again later.</td></tr>`;
+      }
     }
 
-    // Function to open the add staff modal
+    // Fetch and populate staff accounts
+    async function fetchStaff() {
+      try {
+        console.log('Fetching staff from /api/staff...');
+        const response = await fetch('/api/staff');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch staff: ${response.statusText}`);
+        }
+        const { success, data: staff } = await response.json();
+        console.log('Staff data:', staff);
+        if (!success) {
+          throw new Error('Server returned an error');
+        }
+        const staffTableBody = document.getElementById('staffTableBody');
+        staffTableBody.innerHTML = '';
+        if (staff.length === 0) {
+          staffTableBody.innerHTML = `<tr><td colspan="6" class="py-2 px-4 text-center text-gray-600">No staff found.</td></tr>`;
+          return;
+        }
+        staff.forEach(staffMember => {
+          staffTableBody.innerHTML += `
+            <tr>
+              <td class="py-2 px-4 border-b">${staffMember.name}</td>
+              <td class="py-2 px-4 border-b">${staffMember.email}</td>
+              <td class="py-2 px-4 border-b">${staffMember.position}</td>
+              <td class="py-2 px-4 border-b">$${parseFloat(staffMember.salary).toFixed(2)}</td>
+              <td class="py-2 px-4 border-b">${staffMember.hire_date}</td>
+              <td class="py-2 px-4 border-b">
+                <button onclick="openEditStaffModal(${staffMember.staff_id}, ${staffMember.user_id}, '${staffMember.name}', '${staffMember.email}', '${staffMember.position}', ${staffMember.salary}, '${staffMember.hire_date}')" class="bg-yellow-500 hover:bg-yellow-700 text-white py-1 px-4 rounded-md">Edit</button>
+                <button onclick="deleteStaff(${staffMember.staff_id})" class="bg-red-500 hover:bg-red-700 text-white py-1 px-4 rounded-md ml-2">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (error) {
+        console.error('Error fetching staff:', error);
+        const staffTableBody = document.getElementById('staffTableBody');
+        staffTableBody.innerHTML = `<tr><td colspan="6" class="py-2 px-4 text-center text-red-600">Failed to load staff. Please try again later.</td></tr>`;
+      }
+    }
+
+    // Open add staff modal
     function openAddStaffModal() {
-      document.getElementById("staffModal").classList.remove("hidden");
-      document.getElementById("staffModalTitle").textContent = "Add Staff";
-      document.getElementById("staffForm").reset();
+      document.getElementById('staffModal').classList.remove('hidden');
+      document.getElementById('staffModalTitle').textContent = 'Add Staff';
+      document.getElementById('staffForm').reset();
+      document.getElementById('staffId').value = '';
+      document.getElementById('userId').value = '';
     }
 
-    // Function to close the add staff modal
+    // Open edit staff modal
+    function openEditStaffModal(staffId, userId, name, email, position, salary, hireDate) {
+      document.getElementById('staffModal').classList.remove('hidden');
+      document.getElementById('staffModalTitle').textContent = 'Edit Staff';
+      document.getElementById('staffId').value = staffId;
+      document.getElementById('userId').value = userId;
+      document.getElementById('staffName').value = name;
+      document.getElementById('staffEmail').value = email;
+      document.getElementById('position').value = position;
+      document.getElementById('salary').value = salary;
+      document.getElementById('hireDate').value = hireDate;
+    }
+
+    // Close staff modal
     function closeStaffModal() {
-      document.getElementById("staffModal").classList.add("hidden");
+      document.getElementById('staffModal').classList.add('hidden');
     }
 
-    // Function to handle staff form submission
-    document.getElementById("staffForm").addEventListener("submit", function(event) {
-      event.preventDefault();
-      const name = document.getElementById("staffName").value;
-      const email = document.getElementById("staffEmail").value;
-      const position = document.getElementById("position").value;
-      const salary = parseFloat(document.getElementById("salary").value);
-      const hireDate = document.getElementById("hireDate").value;
-      
-      const newStaffMember = {
-        id: staff.length + 1,
-        user_id: users.length + 1,
-        position,
-        salary,
-        hire_date: hireDate
-      };
+    // Open edit user modal
+    function openEditUserModal(userId, name, email) {
+      document.getElementById('userModal').classList.remove('hidden');
+      document.getElementById('userIdEdit').value = userId;
+      document.getElementById('userName').value = name;
+      document.getElementById('userEmail').value = email;
+    }
 
-      staff.push(newStaffMember);
-      populateStaffTable();
-      closeStaffModal();
+    // Close user modal
+    function closeUserModal() {
+      document.getElementById('userModal').classList.add('hidden');
+    }
+
+    // Handle staff form submission (add/edit)
+    document.getElementById('staffForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const staffId = document.getElementById('staffId').value;
+      const userId = document.getElementById('userId').value;
+      const name = document.getElementById('staffName').value;
+      const email = document.getElementById('staffEmail').value;
+      const position = document.getElementById('position').value;
+      const salary = parseFloat(document.getElementById('salary').value);
+      const hireDate = document.getElementById('hireDate').value;
+
+      const payload = { name, email, position, salary, hire_date: hireDate };
+      if (userId) payload.user_id = userId;
+
+      try {
+        const url = staffId ? `/api/staff/${staffId}` : '/api/staff';
+        const method = staffId ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to ${staffId ? 'update' : 'add'} staff: ${response.statusText}`);
+        }
+        await fetchStaff();
+        closeStaffModal();
+      } catch (error) {
+        console.error(`Error ${staffId ? 'updating' : 'adding'} staff:`, error);
+        alert(`Failed to ${staffId ? 'update' : 'add'} staff. Please try again.`);
+      }
     });
 
+    // Handle user form submission (edit)
+    document.getElementById('userForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const userId = document.getElementById('userIdEdit').value;
+      const name = document.getElementById('userName').value;
+      const email = document.getElementById('userEmail').value;
+
+      try {
+        const response = await fetch(`/api/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email })
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to update user: ${response.statusText}`);
+        }
+        await fetchUsers();
+        closeUserModal();
+      } catch (error) {
+        console.error('Error updating user:', error);
+        alert('Failed to update user. Please try again.');
+      }
+    });
+
+    // Delete user
+    async function deleteUser(userId) {
+      if (!confirm('Are you sure you want to delete this user?')) return;
+      try {
+        const response = await fetch(`/api/users/${userId}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to delete user: ${response.statusText}`);
+        }
+        await fetchUsers();
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Failed to delete user. Please try again.');
+      }
+    }
+
+    // Delete staff
+    async function deleteStaff(staffId) {
+      if (!confirm('Are you sure you want to delete this staff member?')) return;
+      try {
+        const response = await fetch(`/api/staff/${staffId}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to delete staff: ${response.statusText}`);
+        }
+        await fetchStaff();
+      } catch (error) {
+        console.error('Error deleting staff:', error);
+        alert('Failed to delete staff. Please try again.');
+      }
+    }
+
     // Initialize tables
-    populateUserTable();
-    populateStaffTable();
+    fetchUsers();
+    fetchStaff();
   </script>
 </body>
 </html>

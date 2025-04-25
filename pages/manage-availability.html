@@ -36,58 +36,78 @@
 
   <!-- Footer -->
   <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-    <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    <p>© 2025 CheckIn Crew. All rights reserved.</p>
   </footer>
 
   <script>
+    // Set staff name from localStorage
     const staffName = localStorage.getItem("staffName");
     if (staffName) {
       document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
     }
 
-    const rooms = [
-      "Deluxe 1", "Deluxe 2", "Deluxe 3", "Deluxe 4", "Deluxe 5",
-      "Standard 1", "Standard 2", "Standard 3", "Standard 4", "Standard 5",
-      "Suite 1", "Suite 2", "Suite 3", "Suite 4", "Suite 5"
-    ];
-
-    const roomStatus = {}; // mock status
-    rooms.forEach(room => {
-      // Randomly set half the rooms as booked just for demo
-      roomStatus[room] = Math.random() > 0.5 ? "Booked" : "Free";
-    });
-
-    function toggleAvailability(button, room) {
-      const current = roomStatus[room];
-      const newStatus = current === "Free" ? "Booked" : "Free";
-      roomStatus[room] = newStatus;
-
-      const row = button.closest("tr");
-      const statusCell = row.querySelector(".status");
-      statusCell.textContent = newStatus;
-
-      statusCell.className = `status py-2 px-4 border-b font-semibold ${newStatus === "Free" ? "text-green-600" : "text-red-600"}`;
-      button.textContent = `Mark as ${newStatus === "Free" ? "Booked" : "Free"}`;
+    // Function to load rooms from the server
+    async function loadRooms() {
+      try {
+        const response = await fetch('/api/all-rooms');
+        if (!response.ok) {
+          throw new Error('Failed to fetch rooms');
+        }
+        const rooms = await response.json();
+        const tbody = document.getElementById('roomTableBody');
+        tbody.innerHTML = ''; // Clear existing rows
+        rooms.forEach(room => {
+          // Map server status ('available'/'occupied') to display status ('Free'/'Booked')
+          const displayStatus = room.status === 'available' ? 'Free' : 'Booked';
+          const statusColor = displayStatus === 'Free' ? 'text-green-600' : 'text-red-600';
+          const buttonText = displayStatus === 'Free' ? 'Mark as Booked' : 'Mark as Free';
+          // Combine type and room_number for display (e.g., "Deluxe 101")
+          const roomName = `${room.type} ${room.room_number}`;
+          const row = `
+            <tr>
+              <td class="py-2 px-4 border-b">${roomName}</td>
+              <td class="status py-2 px-4 border-b font-semibold ${statusColor}">${displayStatus}</td>
+              <td class="py-2 px-4 border-b">
+                <button onclick="toggleAvailability(${room.id}, '${room.status}')" class="bg-blue-500 hover:bg-blue-700 text-white py-1 px-4 rounded-md">
+                  ${buttonText}
+                </button>
+              </td>
+            </tr>
+          `;
+          tbody.innerHTML += row;
+        });
+      } catch (error) {
+        console.error('Error loading rooms:', error);
+        // Optional: Display error message to user
+      }
     }
 
-    const tbody = document.getElementById("roomTableBody");
-    rooms.forEach(room => {
-      const status = roomStatus[room];
-      const statusColor = status === "Free" ? "text-green-600" : "text-red-600";
-      const toggleText = status === "Free" ? "Mark as Booked" : "Mark as Free";
+    // Function to toggle room availability
+    async function toggleAvailability(roomId, currentStatus) {
+      // Determine new status based on current status
+      const newStatus = currentStatus === 'available' ? 'occupied' : 'available';
+      try {
+        const response = await fetch(`/api/rooms/${roomId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+        const result = await response.json();
+        if (result.success) {
+          loadRooms(); // Reload table to reflect changes
+        } else {
+          alert(result.message); // Show server error (e.g., "Room not found")
+        }
+      } catch (error) {
+        console.error('Error updating room status:', error);
+        alert('Failed to update room status');
+      }
+    }
 
-      tbody.innerHTML += `
-        <tr>
-          <td class="py-2 px-4 border-b">${room}</td>
-          <td class="status py-2 px-4 border-b font-semibold ${statusColor}">${status}</td>
-          <td class="py-2 px-4 border-b">
-            <button onclick="toggleAvailability(this, '${room}')" class="bg-blue-500 hover:bg-blue-700 text-white py-1 px-4 rounded-md">
-              ${toggleText}
-            </button>
-          </td>
-        </tr>
-      `;
-    });
+    // Load rooms when the page loads
+    loadRooms();
   </script>
 
 </body>

@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 const dbConfig = {
   host: "localhost",
   user: "root",
-  password: "dani",
+  password: "Maazking1@",
   database: "hotel_db",
   waitForConnections: true,
   connectionLimit: 10,
@@ -573,16 +573,205 @@ app.post("/book-room", async (req, res) => {
     connection.release();
   }
 });
-
-// Catch-all route for 404
-app.get("/*", (req, res) => {
-  res.sendFile(path.join(__dirname, "pages", "404.html"));
+// API to get all rooms
+app.get('/api/all-rooms', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('SELECT id, room_number, type, status FROM rooms');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching all rooms:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch rooms' });
+  }
+});
+// get all bookings
+app.get('/api/booking-history', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        bookings.id,
+        users.name AS customerName,
+        rooms.room_number AS room,
+        bookings.check_in AS checkIn,
+        bookings.check_out AS checkOut,
+        bookings.status
+      FROM bookings
+      JOIN rooms ON bookings.room_id = rooms.id 
+      JOIN users ON bookings.user_id = users.id
+    `);
+    console.log('Fetched booking history:', rows); // Debug log
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error('Error fetching booking history:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch booking history' });
+  }
+});
+// API to update room status
+app.patch('/api/rooms/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  if (!status || !['available', 'occupied'].includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status' });
+  }
+  try {
+    const [result] = await pool.execute('UPDATE rooms SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Room not found' });
+    }
+    res.json({ success: true, message: 'Room status updated' });
+  } catch (err) {
+    console.error('Error updating room status:', err);
+    res.status(500).json({ success: false, message: 'Failed to update room status' });
+  }
 });
 
-// Start server on port 5000
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Get all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('SELECT id, name, email, created_at, role FROM users');
+    console.log('Fetched users:', rows);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch users' });
+  }
+});
+
+// Update user
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email } = req.body;
+  try {
+    const [result] = await pool.execute(
+      'UPDATE users SET name = ?, email = ? WHERE id = ?',
+      [name, email, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating user:', err);
+    res.status(500).json({ success: false, message: 'Failed to update user' });
+  }
+});
+
+// Delete user
+app.delete('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Delete associated staff record first (if any)
+    await pool.execute('DELETE FROM staff WHERE user_id = ?', [id]);
+    const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete user' });
+  }
+});
+
+// Get all staff (join with users for name and email)
+app.get('/api/staff', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        staff.id AS staff_id,
+        staff.user_id,
+        users.name,
+        users.email,
+        staff.position,
+        staff.salary,
+        staff.hire_date
+      FROM staff
+      JOIN users ON staff.user_id = users.id
+    `);
+    console.log('Fetched staff:', rows);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error('Error fetching staff:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch staff' });
+  }
+});
+
+// Add staff (create user with role 'staff' and staff record)
+app.post('/api/staff', async (req, res) => {
+  const { name, email, position, salary, hire_date } = req.body;
+  const password_hash = 'default_hashed_password'; // Replace with actual password hashing
+  try {
+    // Insert into users table
+    const [userResult] = await pool.execute(
+      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+      [name, email, password_hash, 'staff']
+    );
+    const userId = userResult.insertId;
+
+    // Insert into staff table
+    await pool.execute(
+      'INSERT INTO staff (user_id, position, salary, hire_date) VALUES (?, ?, ?, ?)',
+      [userId, position, salary, hire_date]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error adding staff:', err);
+    res.status(500).json({ success: false, message: 'Failed to add staff' });
+  }
+});
+
+// Update staff
+app.put('/api/staff/:id', async (req, res) => {
+  const { id } = req.params;
+  const { user_id, name, email, position, salary, hire_date } = req.body;
+  try {
+    // Update users table
+    const [userResult] = await pool.execute(
+      'UPDATE users SET name = ?, email = ? WHERE id = ?',
+      [name, email, user_id]
+    );
+    if (userResult.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Update staff table
+    const [staffResult] = await pool.execute(
+      'UPDATE staff SET position = ?, salary = ?, hire_date = ? WHERE id = ?',
+      [position, salary, hire_date, id]
+    );
+    if (staffResult.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Staff not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating staff:', err);
+    res.status(500).json({ success: false, message: 'Failed to update staff' });
+  }
+});
+
+// Delete staff
+app.delete('/api/staff/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Get user_id from staff table
+    const [staffRows] = await pool.execute('SELECT user_id FROM staff WHERE id = ?', [id]);
+    if (staffRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Staff not found' });
+    }
+    const userId = staffRows[0].user_id;
+
+    // Delete staff record
+    const [staffResult] = await pool.execute('DELETE FROM staff WHERE id = ?', [id]);
+    if (staffResult.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Staff not found' });
+    }
+
+    // Delete associated user
+    await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting staff:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete staff' });
+  }
 });
 
 //Handling Complaints
@@ -606,4 +795,15 @@ app.post('/api/complaint-request', async (req, res) => {
       console.error("Error inserting complaint/request:", error);
       res.status(500).json({ success: false, message: "Server error" });
   }
+});
+
+// Catch-all route for 404
+app.get("/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "pages", "404.html"));
+});
+
+// Start server on port 5000
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

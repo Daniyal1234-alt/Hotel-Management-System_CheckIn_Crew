@@ -15,6 +15,16 @@ INSERT INTO bookings (user_id, room_id, check_in, check_out, status, payment_met
 (1, 1, '2025-04-10', '2025-04-15', 'confirmed', 'credit card', 25000.00),
 (1, 2, '2025-05-01', '2025-05-05', 'cancelled', 'cash', 32000.00);
 
+INSERT INTO users (name, email, password_hash, role)
+VALUES ('Ali Admin', 'admin@example.com', '123', 'admin');
+
+-- 2. Get the inserted user's ID (in SQL clients that support LAST_INSERT_ID)
+SET @user_id = LAST_INSERT_ID();
+
+-- 3. Insert into admins table
+-- INSERT INTO admins (user_id, access_level)
+-- VALUES (@user_id, 'superadmin');
+-- uncomment if necessary
 INSERT INTO rooms (room_number, type, price, status, description) VALUES
 -- Standard Rooms
 (103, 'Standard 1', 6000.00, 'available', 'Comfortable standard room with essential amenities.'),
