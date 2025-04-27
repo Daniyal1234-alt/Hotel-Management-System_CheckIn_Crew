@@ -45,7 +45,7 @@
 
   <!-- Footer -->
   <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-    <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+    <p>© 2025 CheckIn Crew. All rights reserved.</p>
   </footer>
 
   <!-- Add/Edit Room Modal -->
@@ -83,32 +83,37 @@
       document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
     }
 
-    // Sample room data (replace with data from your backend)
-    let rooms = [
-      { roomNumber: "101", type: "Deluxe", price: 150.00, description: "Spacious room with a king-size bed and a view of the ocean." },
-      { roomNumber: "102", type: "Standard", price: 100.00, description: "Cozy room with all basic amenities and a queen-size bed." },
-      { roomNumber: "103", type: "Suite", price: 200.00, description: "Luxurious suite with a separate living area and premium facilities." }
-    ];
-
+    let rooms = [];
+    let isEditMode = false;
+    let currentRoomId = null;
     const tbody = document.getElementById("roomTableBody");
 
-    // Function to populate the room table
+    // Fetch rooms from the server
+    async function fetchRooms() {
+      try {
+        const response = await fetch('/api/rooms-list');
+        if (!response.ok) throw new Error('Failed to fetch rooms');
+        rooms = await response.json();
+        populateRoomTable();
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+        alert('Failed to load rooms. Please try again later.');
+      }
+    }
+
+    // Populate the room table
     function populateRoomTable() {
       tbody.innerHTML = '';
       rooms.forEach(room => {
         tbody.innerHTML += `
           <tr>
-            <td class="py-2 px-4 border-b">${room.roomNumber}</td>
+            <td class="py-2 px-4 border-b">${room.room_number}</td>
             <td class="py-2 px-4 border-b">${room.type}</td>
-            <td class="py-2 px-4 border-b">$${room.price.toFixed(2)}</td>
+            <td class="py-2 px-4 border-b">$${parseFloat(room.price).toFixed(2)}</td>
             <td class="py-2 px-4 border-b">${room.description}</td>
             <td class="py-2 px-4 border-b">
-              <button onclick="openEditRoomModal('${room.roomNumber}')" class="bg-yellow-500 hover:bg-yellow-700 text-white py-1 px-4 rounded-md">
-                Edit
-              </button>
-              <button onclick="deleteRoom('${room.roomNumber}')" class="bg-red-500 hover:bg-red-700 text-white py-1 px-4 rounded-md ml-2">
-                Delete
-              </button>
+              <button onclick="openEditRoomModal(${room.id})" class="bg-yellow-500 hover:bg-yellow-700 text-white py-1 px-4 rounded-md">Edit</button>
+              <button onclick="deleteRoom(${room.id})" class="bg-red-500 hover:bg-red-700 text-white py-1 px-4 rounded-md ml-2">Delete</button>
             </td>
           </tr>
         `;
@@ -117,30 +122,33 @@
 
     // Open modal for adding a new room
     function openAddRoomModal() {
+      isEditMode = false;
+      currentRoomId = null;
       document.getElementById("modalTitle").textContent = "Add Room";
       document.getElementById("roomForm").reset();
+      document.getElementById("roomNumber").readOnly = false;
       document.getElementById("roomModal").classList.remove("hidden");
     }
 
     // Open modal for editing an existing room
-    function openEditRoomModal(roomNumber) {
-      const room = rooms.find(r => r.roomNumber === roomNumber);
-      document.getElementById("modalTitle").textContent = "Edit Room";
-      document.getElementById("roomNumber").value = room.roomNumber;
-      document.getElementById("type").value = room.type;
-      document.getElementById("price").value = room.price;
-      document.getElementById("description").value = room.description;
-      document.getElementById("roomModal").classList.remove("hidden");
-
-      // Handle form submit for editing
-      document.getElementById("roomForm").onsubmit = function(event) {
-        event.preventDefault();
-        room.type = document.getElementById("type").value;
-        room.price = parseFloat(document.getElementById("price").value);
-        room.description = document.getElementById("description").value;
-        populateRoomTable();
-        closeModal();
-      };
+    async function openEditRoomModal(id) {
+      try {
+        const response = await fetch(`/api/room-details/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch room details');
+        const room = await response.json();
+        document.getElementById("modalTitle").textContent = "Edit Room";
+        document.getElementById("roomNumber").value = room.room_number;
+        document.getElementById("roomNumber").readOnly = true; // Room number is immutable
+        document.getElementById("type").value = room.type;
+        document.getElementById("price").value = room.price;
+        document.getElementById("description").value = room.description;
+        document.getElementById("roomModal").classList.remove("hidden");
+        isEditMode = true;
+        currentRoomId = id;
+      } catch (error) {
+        console.error('Error fetching room details:', error);
+        alert('Failed to load room details. Please try again.');
+      }
     }
 
     // Close the modal
@@ -148,31 +156,57 @@
       document.getElementById("roomModal").classList.add("hidden");
     }
 
-    // Add new room
-    document.getElementById("roomForm").onsubmit = function(event) {
+    // Handle form submission for adding or editing a room
+    document.getElementById("roomForm").onsubmit = async function(event) {
       event.preventDefault();
-      const newRoom = {
-        roomNumber: document.getElementById("roomNumber").value,
+      const roomData = {
+        room_number: document.getElementById("roomNumber").value,
         type: document.getElementById("type").value,
         price: parseFloat(document.getElementById("price").value),
         description: document.getElementById("description").value
       };
-      rooms.push(newRoom);
-      populateRoomTable();
-      closeModal();
+
+      try {
+        if (isEditMode) {
+          // Update existing room
+          const response = await fetch(`/api/update-room/${currentRoomId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: roomData.type, price: roomData.price, description: roomData.description })
+          });
+          if (!response.ok) throw new Error('Failed to update room');
+        } else {
+          // Add new room
+          const response = await fetch('/api/create-room', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(roomData)
+          });
+          if (!response.ok) throw new Error('Failed to add room');
+        }
+        await fetchRooms();
+        closeModal();
+      } catch (error) {
+        console.error('Error saving room:', error);
+        alert('Failed to save room. Please try again.');
+      }
     };
 
-    // Function to delete a room
-    function deleteRoom(roomNumber) {
-      const confirmDelete = confirm(`Are you sure you want to delete room ${roomNumber}?`);
-      if (confirmDelete) {
-        rooms = rooms.filter(room => room.roomNumber !== roomNumber);
-        populateRoomTable();
+    // Delete a room
+    async function deleteRoom(id) {
+      if (!confirm('Are you sure you want to delete this room?')) return;
+      try {
+        const response = await fetch(`/api/remove-room/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to delete room');
+        await fetchRooms();
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        alert('Failed to delete room. Please try again.');
       }
     }
 
-    // Initially populate the room table
-    populateRoomTable();
+    // Initially fetch and populate the room table
+    fetchRooms();
   </script>
 
 </body>

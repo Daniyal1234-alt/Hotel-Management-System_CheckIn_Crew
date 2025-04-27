@@ -788,6 +788,119 @@ app.delete('/api/staff/:id', async (req, res) => {
   }
 });
 
+// Retrieve all rooms
+app.get('/api/rooms-list', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('SELECT id, room_number, type, price, status, description FROM rooms');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching rooms:', err);
+    res.status(500).json({ success: false, message: 'Failed to retrieve rooms' });
+  }
+});
+
+// Retrieve a specific room by ID
+app.get('/api/room-details/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.execute('SELECT id, room_number, type, price, status, description FROM rooms WHERE id = ?', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Room not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Error fetching room:', err);
+    res.status(500).json({ success: false, message: 'Failed to retrieve room' });
+  }
+});
+
+// Add a new room
+app.post('/api/create-room', async (req, res) => {
+  const { room_number, type, price, description } = req.body;
+  if (!room_number || !type || !price || !description) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+  try {
+    const [existing] = await pool.execute('SELECT id FROM rooms WHERE room_number = ?', [room_number]);
+    if (existing.length > 0) {
+      return res.status(400).json({ success: false, message: 'Room number already exists' });
+    }
+    const [result] = await pool.execute(
+      'INSERT INTO rooms (room_number, type, price, status, description) VALUES (?, ?, ?, ?, ?)',
+      [room_number, type, price, 'available', description]
+    );
+    res.status(201).json({ success: true, id: result.insertId });
+  } catch (err) {
+    console.error('Error adding room:', err);
+    res.status(500).json({ success: false, message: 'Failed to create room' });
+  }
+});
+
+// Update an existing room
+app.put('/api/update-room/:id', async (req, res) => {
+  const { id } = req.params;
+  const { type, price, description } = req.body;
+  if (!type || !price || !description) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+  try {
+    const [result] = await pool.execute(
+      'UPDATE rooms SET type = ?, price = ?, description = ? WHERE id = ?',
+      [type, price, description, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Room not found' });
+    }
+    res.json({ success: true, message: 'Room updated successfully' });
+  } catch (err) {
+    console.error('Error updating room:', err);
+    res.status(500).json({ success: false, message: 'Failed to update room' });
+  }
+});
+
+// Delete a room
+app.delete('/api/remove-room/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.execute('DELETE FROM rooms WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Room not found' });
+    }
+    res.json({ success: true, message: 'Room removed successfully' });
+  } catch (err) {
+    console.error('Error deleting room:', err);
+    res.status(500).json({ success: false, message: 'Failed to remove room' });
+  }
+});
+// API to get booking history for reports
+app.get('/api/bookings-report', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        bookings.id,
+        users.name AS customerName,
+        rooms.room_number AS room,
+        bookings.check_in AS checkIn,
+        bookings.check_out AS checkOut,
+        bookings.status,
+        bookings.payment_method,
+        bookings.total_price,
+        bookings.booking_date
+      FROM bookings
+      LEFT JOIN rooms ON bookings.room_id = rooms.id 
+      LEFT JOIN users ON bookings.user_id = users.id
+    `);
+    console.log('Fetched booking history:', rows); // Debug log
+    if (rows.length === 0) {
+      console.warn('No bookings found in database');
+      return res.json({ success: true, data: [], message: 'No bookings available' });
+    }
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error('Error fetching booking history:', err.message, err.stack);
+    res.status(500).json({ success: false, message: 'Failed to fetch booking history', error: err.message });
+  }
+});
 //Handling Complaints
 app.post('/api/complaint-request', async (req, res) => {
   const { userId, bookingId, type, comment } = req.body;
