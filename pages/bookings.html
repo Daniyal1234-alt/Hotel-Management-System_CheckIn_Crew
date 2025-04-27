@@ -19,13 +19,15 @@
     <div class="flex-grow container mx-auto my-10 px-6 flex justify-center items-center">
         <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-2xl">
             <h2 class="text-3xl font-bold mb-4 text-center">Book Your Stay</h2>
-            <form id="booking-form">
+            <div id="loading" class="text-center text-gray-500 hidden">Loading rooms...</div>
+            <div id="error" class="text-center text-red-500 hidden"></div>
+            <form id="booking-form" class="hidden">
                 <label class="block text-gray-700 font-bold">Full Name:</label>
                 <input type="text" id="full-name" class="w-full p-2 border rounded mb-4" required>
                 
                 <label class="block text-gray-700 font-bold">Email:</label>
                 <input type="email" id="email" class="w-full p-2 border rounded mb-4" required>
-
+                
                 <label class="block text-gray-700 font-bold">Phone Number:</label>
                 <input type="tel" id="phone-number" class="w-full p-2 border rounded mb-4" required>
                 
@@ -37,22 +39,7 @@
                 
                 <label class="block text-gray-700 font-bold">Select Room:</label>
                 <select id="room-type" class="w-full p-2 border rounded mb-4" required>
-                    <option value="deluxe1">Deluxe 1</option>
-                    <option value="deluxe2">Deluxe 2</option>
-                    <option value="deluxe3">Deluxe 3</option>
-                    <option value="deluxe4">Deluxe 4</option>
-                    <option value="deluxe5">Deluxe 5</option>
-                    <option value="standard1">Standard 1</option>
-                    <option value="standard2">Standard 2</option>
-                    <option value="standard3">Standard 3</option>
-                    <option value="standard4">Standard 4</option>
-                    <option value="standard5">Standard 5</option>
-                    <option value="suite1">Suite 1</option>
-                    <option value="suite2">Suite 2</option>
-                    <option value="suite3">Suite 3</option>
-                    <option value="suite4">Suite 4</option>
-                    <option value="suite5">Suite 5</option>
-
+                    <!-- Dynamically populated -->
                 </select>
                 
                 <label class="block text-gray-700 font-bold">Payment Method:</label>
@@ -84,31 +71,82 @@
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white text-center p-4 mt-auto">
-        <p>&copy; 2025 CheckIn Crew. All rights reserved.</p>
+        <p>© 2025 CheckIn Crew. All rights reserved.</p>
     </footer>
 
     <script>
         const email = sessionStorage.getItem("email");
         const isLoggedIn = sessionStorage.getItem("isLoggedIn");
         const bookingForm = document.getElementById("booking-form");
+        const roomTypeSelect = document.getElementById("room-type");
         const paymentDialog = document.getElementById("payment-dialog");
         const paymentInfo = document.getElementById("payment-info");
         const confirmPaymentButton = document.getElementById("confirm-payment");
         const closeDialogButton = document.getElementById("close-dialog");
-        
+        const loadingDiv = document.getElementById("loading");
+        const errorDiv = document.getElementById("error");
 
+        // Fetch available rooms from the server
+        async function fetchRooms() {
+            try {
+                loadingDiv.classList.remove("hidden");
+                errorDiv.classList.add("hidden");
+                const response = await fetch("/api/rooms");
+                if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to fetch rooms`);
+                const rooms = await response.json();
+                console.log("Fetched rooms:", rooms);
+                if (!rooms || rooms.length === 0) {
+                    throw new Error("No available rooms found");
+                }
+                populateRoomDropdown(rooms);
+                loadingDiv.classList.add("hidden");
+                bookingForm.classList.remove("hidden");
+            } catch (error) {
+                console.error("Error fetching rooms:", error.message);
+                loadingDiv.classList.add("hidden");
+                errorDiv.textContent = `Failed to load rooms: ${error.message}. Please try again later.`;
+                errorDiv.classList.remove("hidden");
+            }
+        }
+
+        // Populate room dropdown with fetched rooms
+        function populateRoomDropdown(rooms) {
+            roomTypeSelect.innerHTML = '<option value="" disabled selected>Select a room</option>';
+            rooms.forEach(room => {
+                const option = document.createElement("option");
+                option.value = room.type; // Send room type to /book-room
+                option.textContent = `${room.room_number} (${room.type}, $${room.price}/night)`;
+                option.dataset.price = room.price; // Store price for payment calculation
+                roomTypeSelect.appendChild(option);
+            });
+        }
+
+        // Pre-fill email if logged in
+        if (isLoggedIn && email) {
+            document.getElementById("email").value = email;
+        }
+
+        // Show payment dialog when a payment method is selected
         document.querySelectorAll('input[name="payment"]').forEach(input => {
             input.addEventListener("change", function() {
-                const name = document.getElementById("full-name").value;
-                const email = document.getElementById("email").value;
-                const phone = document.getElementById("phone-number").value;
+                const name = document.getElementById("full-name").value.trim();
+                const email = document.getElementById("email").value.trim();
+                const phone = document.getElementById("phone-number").value.trim();
                 const checkIn = document.getElementById("check-in").value;
                 const checkOut = document.getElementById("check-out").value;
-                const room = document.getElementById("room-type").selectedOptions[0].text;
-                const paymentMethod = this.nextElementSibling.innerText;
-                const price = "$200"; // Example price
-                
-                if (name && email && checkIn && checkOut) {
+                const roomOption = roomTypeSelect.selectedOptions[0];
+                const room = roomOption ? roomOption.textContent : "N/A";
+                const paymentMethod = this.nextElementSibling.textContent;
+                const pricePerNight = roomOption ? parseFloat(roomOption.dataset.price) : 0;
+
+                // Calculate total price based on stay duration
+                const checkInDate = new Date(checkIn);
+                const checkOutDate = new Date(checkOut);
+                const stayDuration = checkOut && checkIn ? 
+                    Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) : 0;
+                const totalPrice = stayDuration > 0 && pricePerNight ? (stayDuration * pricePerNight).toFixed(2) : "N/A";
+
+                if (name && email && phone && checkIn && checkOut && roomOption.value) {
                     paymentInfo.innerHTML = `<strong>Name:</strong> ${name}<br>
                                             <strong>Email:</strong> ${email}<br>
                                             <strong>Phone:</strong> ${phone}<br>
@@ -116,52 +154,66 @@
                                             <strong>Check-in:</strong> ${checkIn}<br>
                                             <strong>Check-out:</strong> ${checkOut}<br>
                                             <strong>Payment Method:</strong> ${paymentMethod}<br>
-                                            <strong>Amount:</strong> ${price}`;
+                                            <strong>Total Amount:</strong> $${totalPrice}`;
                     paymentDialog.classList.remove("hidden");
+                } else {
+                    alert("Please fill in all required fields before selecting a payment method.");
                 }
             });
         });
-        document.getElementById("booking-form").addEventListener("submit", async function(event) {
+
+        // Handle form submission
+        bookingForm.addEventListener("submit", async function(event) {
             event.preventDefault();
             const name = document.getElementById("full-name").value.trim();
             const email = document.getElementById("email").value.trim();
             const phone = document.getElementById("phone-number").value.trim();
             const checkIn = document.getElementById("check-in").value;
             const checkOut = document.getElementById("check-out").value;
-            const room = document.getElementById("room-type").selectedOptions[0].text;
-            const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || "Not selected";
-            const price = document.getElementById("room-type").selectedOptions[0].getAttribute("data-price") || 200; // Get price from option
+            const room = roomTypeSelect.value; // Send room type (e.g., "deluxe")
+            const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || null;
+
+            if (!name || !email || !phone || !checkIn || !checkOut || !room || !paymentMethod) {
+                alert("Please fill in all required fields.");
+                return;
+            }
 
             try {
-                console.log(JSON.stringify({ name, email, phone, checkIn, checkOut, room, paymentMethod, price }));
+                console.log("Submitting booking:", { name, email, phone, checkIn, checkOut, room, paymentMethod });
                 const response = await fetch("/book-room", {
-                    
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, email, phone, checkIn, checkOut, room, paymentMethod, price }),
+                    body: JSON.stringify({ name, email, phone, checkIn, checkOut, room, paymentMethod })
                 });
 
                 const result = await response.json();
-                
+                console.log("Booking response:", result);
+
                 if (result.success) {
-                    alert("Booking Confirmed! A confirmation email has been sent.");
+                    paymentDialog.classList.add("hidden");
+                    alert(`Booking Confirmed! Total: $${result.total_price}. A confirmation email has been sent.`);
+                    bookingForm.reset();
                 } else {
-                    alert(result.message);
+                    alert(result.message || "Booking failed. Please try again.");
                 }
             } catch (error) {
-                alert("An error occurred while booking. Please try again.");
-                console.error(error);
+                console.error("Error submitting booking:", error.message);
+                alert(`An error occurred while booking: ${error.message}. Please try again.`);
             }
         });
 
+        // Handle payment dialog buttons
         closeDialogButton.addEventListener("click", function() {
             paymentDialog.classList.add("hidden");
         });
 
         confirmPaymentButton.addEventListener("click", function() {
-            paymentDialog.classList.add("hidden");
-            alert("Processing Payment");
+            // Trigger form submission
+            bookingForm.dispatchEvent(new Event("submit"));
         });
+
+        // Initialize the page
+        fetchRooms();
     </script>
 </body>
 </html>
