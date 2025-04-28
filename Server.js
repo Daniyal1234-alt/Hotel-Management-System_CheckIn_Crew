@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 const dbConfig = {
   host: "localhost",
   user: "root",
-  password: "Maazking1@",
+  password: "dani",
   database: "hotel_db",
   waitForConnections: true,
   connectionLimit: 10,

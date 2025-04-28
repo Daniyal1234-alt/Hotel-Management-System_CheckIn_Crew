@@ -1,25 +1,17 @@
 {
-  "dependencies": {
-    "axios": "^1.9.0",
-    "bcryptjs": "^3.0.2",
-    "body-parser": "^1.20.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "knex": "^3.1.0",
-    "mysql": "^2.18.1",
-    "mysql2": "^3.13.0",
-    "nodemon": "^3.1.9"
-  },
   "name": "checkin-crew",
   "version": "1.0.0",
-  "description": "CheckIn Crew is a powerful hotel management software designed to streamline operations, enhance guest experiences, and optimize bookings. With features like reservation management, billing, housekeeping tracking, and real-time reporting, it simplifies hotel administration. Ideal for hotels of all sizes, CheckIn Crew ensures seamless check-ins, efficient staff coordination, and increased revenue.\r ![Company Logo](https://github.com/user-attachments/assets/c1a6580b-5db3-4a07-a4f1-5731e614969a)",
-  "main": "Server.js",
+  "description": "CheckIn Crew is a powerful hotel management software designed to streamline operations, enhance guest experiences, and optimize bookings. With features like reservation management, billing, housekeeping tracking, and real-time reporting, it simplifies hotel administration. Ideal for hotels of all sizes, CheckIn Crew ensures seamless check-ins, efficient staff coordination, and increased revenue.",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
+    "dev": "nodemon server.js",
     "setup-db": "mysql -u root -p < database/schema/db_schema.sql",
-    "seed-db": "mysql -u root -p hotel_db < database/seeds/populate_db.sql"
+    "seed-db": "mysql -u root -p hotel_db < database/seeds/populate_db.sql",
+    "test": "jest",
+    "test:watch": "jest --watchAll",
+    "test:coverage": "jest --coverage",
+    "coverage": "nyc --reporter=html --reporter=text npm run test"
   },
   "repository": {
     "type": "git",
@@ -31,5 +23,22 @@
   "bugs": {
     "url": "https://github.com/Daniyal1234-alt/checkin-crew/issues"
   },
-  "homepage": "https://github.com/Daniyal1234-alt/checkin-crew#readme"
+  "homepage": "https://github.com/Daniyal1234-alt/checkin-crew#readme",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "knex": "^3.1.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.13.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nyc": "^17.1.0",
+    "supertest": "^7.1.0",
+    "nodemon": "^3.1.9"
+  }
 }
