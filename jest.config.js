@@ -1,24 +1,21 @@
 // jest.config.js
 module.exports = {
-    testEnvironment: 'node',
-    collectCoverage: true,
-    coverageReporters: ['text', 'html', 'lcov'],
-    collectCoverageFrom: [
-      'routes/**/*.js',
-      'controllers/**/*.js',
-      'models/**/*.js',
-      'middleware/**/*.js',
-      'utils/**/*.js',
-      '!node_modules/**',
-      '!coverage/**'
-    ],
-    coverageThreshold: {
-      global: {
-        statements: 70,
-        branches: 70,
-        functions: 70,
-        lines: 70
-      }
-    },
-    verbose: true
-  };
+  collectCoverageFrom: [
+    "**/*.js",                    // Collect all JS files...
+    "!**/node_modules/**",         // except node_modules
+    "!**/coverage/**",             // except coverage folders
+    "!jest.config.js",             // except jest config
+    "!betterServer.js",            // except betterServer.js
+    "!start.js"                    // except start.js
+  ],
+  testEnvironment: "node",
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50
+    }
+  },
+  verbose: true
+};

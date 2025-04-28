@@ -24,17 +24,17 @@ const dbConfig = {
 // Create connection pool
 const pool = mysql.createPool(dbConfig);
 
-// Verify connection
-pool.getConnection()
-  .then(connection => {
-    console.log("MySQL Connected...");
-    connection.release();
-  })
-  .catch(err => {
-    console.error("Database connection failed:", err);
-    process.exit(1);
-  });
 
+async function connectDB() {
+    try {
+      const connection = await pool.getConnection();
+      console.log("MySQL Connected...");
+      connection.release();
+    } catch (err) {
+      console.error("Database connection failed:", err);
+      process.exit(1);
+    }
+  }
 // Serve static files from the "pages" directory
 app.use(express.static(path.join(__dirname, "pages")));
 
@@ -929,8 +929,5 @@ app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "pages", "404.html"));
 });
 
-// Start server on port 5000
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
+module.exports = { app, pool  }; // export both app and pool if needed

@@ -25,3 +25,6 @@ mysql -u root -p < database/schema/db_schema.sql
 
 mysql -u root -p hotel_db < database/seeds/populate_db.sql 
 )
+
+```
+Run test cases: npm run test:coverage
