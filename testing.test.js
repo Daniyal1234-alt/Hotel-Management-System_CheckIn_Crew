@@ -1282,3 +1282,91 @@ describe('Hotel API Tests', () => {
     });
   });
 });
+describe('Staff and Room API Tests', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // === Update Staff ===
+  test('PUT /api/staff/:id - successful staff update', async () => {
+    pool.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // user update
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // staff update
+
+    const res = await request(app).put('/api/staff/1').send({
+      user_id: 1,
+      name: 'John',
+      email: 'john@example.com',
+      position: 'Manager',
+      salary: 5000,
+      hire_date: '2023-01-01'
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  // === Delete Staff ===
+  test('DELETE /api/staff/:id - successful staff deletion', async () => {
+    pool.execute
+      .mockResolvedValueOnce([[{ user_id: 10 }]]) // get user_id
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // delete staff
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // delete user
+
+    const res = await request(app).delete('/api/staff/1');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+
+  // === Get Room by ID ===
+  test('GET /api/room-details/:id - return room', async () => {
+    const room = {
+      id: 1,
+      room_number: '101',
+      type: 'Single',
+      price: 1000,
+      status: 'available',
+      description: 'Nice room'
+    };
+    pool.execute.mockResolvedValueOnce([[room]]);
+
+    const res = await request(app).get('/api/room-details/1');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual(room);
+  });
+
+  // === Create Room ===
+  test('POST /api/create-room - create new room', async () => {
+    pool.execute
+      .mockResolvedValueOnce([[]]) // no existing room
+      .mockResolvedValueOnce([{ insertId: 5 }]); // new room inserted
+
+    const res = await request(app).post('/api/create-room').send({
+      room_number: '102',
+      type: 'Double',
+      price: 1500,
+      description: 'Spacious room'
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.id).toBe(5);
+  });
+
+  // === Update Room ===
+  test('PUT /api/update-room/:id - update room', async () => {
+    pool.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const res = await request(app).put('/api/update-room/1').send({
+      type: 'Deluxe',
+      price: 2000,
+      description: 'Updated description'
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+});
+
+
