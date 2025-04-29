@@ -1,5 +1,6 @@
 const request = require('supertest');
-const { app, pool } = require('./Server.js');
+const app = require('./Server');
+const pool = require('./db/pool');
 
 // Mock the MySQL pool
 jest.mock('mysql2/promise', () => {
@@ -81,7 +82,7 @@ describe('Hotel API Tests', () => {
       };
 
       const response = await request(app)
-        .post('/book-room')
+        .post('/api/book-room')
         .send(bookingData);
 
       expect(response.status).toBe(200);
@@ -116,7 +117,7 @@ describe('Hotel API Tests', () => {
       };
 
       const response = await request(app)
-        .post('/book-room')
+        .post('/api/book-room')
         .send(bookingData);
 
       expect(response.status).toBe(400);
@@ -507,7 +508,7 @@ describe('Hotel API Tests', () => {
       };
 
       const response = await request(app)
-        .post('/book-room')
+        .post('/api/book-room')
         .send(bookingData);
 
       expect(response.status).toBe(200);
@@ -542,7 +543,7 @@ describe('Hotel API Tests', () => {
       };
 
       const response = await request(app)
-        .post('/book-room')
+        .post('/api/book-room')
         .send(bookingData);
 
       expect(response.status).toBe(400);
