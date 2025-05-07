@@ -30,6 +30,18 @@ app.get('/staff', async (req, res) => {
   // Add staff (create user with role 'staff' and staff record)
   app.post('/staff', async (req, res) => {
     const { name, email, position, salary, hire_date } = req.body;
+  
+    // Validate required fields
+    if (!name || !email || !position || salary == null || !hire_date) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+  
+    // Ensure salary is a valid number
+    const parsedSalary = parseFloat(salary);
+    if (isNaN(parsedSalary) || parsedSalary < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid salary' });
+    }
+  
     const password_hash = 'default_hashed_password'; // Replace with actual password hashing
     try {
       // Insert into users table
@@ -42,12 +54,16 @@ app.get('/staff', async (req, res) => {
       // Insert into staff table
       await pool.execute(
         'INSERT INTO staff (user_id, position, salary, hire_date) VALUES (?, ?, ?, ?)',
-        [userId, position, salary, hire_date]
+        [userId, position, parsedSalary, hire_date]
       );
       res.json({ success: true });
     } catch (err) {
       console.error('Error adding staff:', err);
-      res.status(500).json({ success: false, message: 'Failed to add staff' });
+      if (err.code === 'ER_DUP_ENTRY') {
+        res.status(400).json({ success: false, message: 'Email already exists' });
+      } else {
+        res.status(500).json({ success: false, message: 'Failed to add staff: ' + err.message });
+      }
     }
   });
   

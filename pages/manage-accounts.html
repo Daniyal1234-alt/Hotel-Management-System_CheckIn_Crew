@@ -12,7 +12,7 @@
   <nav class="bg-blue-600 text-white p-4">
     <div class="container mx-auto flex justify-between items-center">
       <a href="#" class="text-2xl font-bold">CheckIn Crew</a>
-      <span class="text-lg" id="staffName">Welcome, Admin</span>
+      <span class="text-lg" id="staffNameDisplay">Welcome, Admin</span>
     </div>
   </nav>
 
@@ -82,7 +82,7 @@
         </div>
         <div class="mb-4">
           <label for="staffEmail" class="block text-gray-700">Email</label>
-          <input type="email" id="staffEmail" name="staffEmail" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
+          <input type="email" id="staffEmail" name="staffEmail" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
         </div>
         <div class="mb-4">
           <label for="position" class="block text-gray-700">Position</label>
@@ -90,7 +90,7 @@
         </div>
         <div class="mb-4">
           <label for="salary" class="block text-gray-700">Salary</label>
-          <input type="number" id="salary" name="salary" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
+          <input type="number" id="salary" name="salary" min="0" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
         </div>
         <div class="mb-4">
           <label for="hireDate" class="block text-gray-700">Hire Date</label>
@@ -130,7 +130,7 @@
     // Set admin name from localStorage
     const staffName = localStorage.getItem("staffName");
     if (staffName) {
-      document.getElementById("staffName").textContent = `Welcome, ${staffName}`;
+      document.getElementById("staffNameDisplay").textContent = `Welcome, ${staffName}`;
     }
 
     // Function to format date to locale string
@@ -228,18 +228,172 @@
       }
     }
 
+    // Function to attach the form submission handler
+    function attachStaffFormHandler() {
+      const form = document.getElementById('staffForm');
+      if (!form) {
+        console.error('staffForm not found!');
+        return;
+      }
+
+      // Remove any existing listeners to prevent duplicates
+      const newForm = form.cloneNode(true);
+      form.parentNode.replaceChild(newForm, form);
+
+      // Attach the event listener to the new form
+      newForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        console.log('Form submission triggered');
+
+        // Re-fetch all fields directly from the DOM
+        const staffNameInput = document.getElementById('staffName');
+        if (!staffNameInput) {
+          console.error('staffName input element not found!');
+          alert('Internal error: Name field not found.');
+          return;
+        }
+
+        const staffId = document.getElementById('staffId')?.value || '';
+        const userId = document.getElementById('userId')?.value || '';
+        const name = staffNameInput.value.trim();
+        const email = document.getElementById('staffEmail')?.value.trim() || '';
+        const position = document.getElementById('position')?.value.trim() || '';
+        const salaryInput = document.getElementById('salary')?.value.trim() || '';
+        let hireDate = document.getElementById('hireDate')?.value || '';
+
+        // Debug: Log all field values and their truthiness
+        console.log('Form Submission - Raw Values:');
+        console.log('staffName (raw):', staffNameInput.value);
+        console.log('Name (trimmed):', name, 'Truthy:', !!name);
+        console.log('Email:', email, 'Truthy:', !!email);
+        console.log('Position:', position, 'Truthy:', !!position);
+        console.log('Salary Input:', salaryInput, 'Truthy:', !!salaryInput);
+        console.log('Hire Date (raw):', hireDate, 'Truthy:', !!hireDate);
+
+        // Fallback for hire date in MM/DD/YYYY format
+        if (hireDate && !/^\d{4}-\d{2}-\d{2}$/.test(hireDate)) {
+          console.log('Hire Date is not in YYYY-MM-DD format, attempting to parse...');
+          const [month, day, year] = hireDate.split('/');
+          if (month && day && year) {
+            hireDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`; // Convert to YYYY-MM-DD
+            console.log('Converted Hire Date:', hireDate);
+          } else {
+            console.log('Invalid date format, could not parse');
+            hireDate = ''; // Reset to empty string to trigger validation error
+          }
+        }
+
+        // Client-side validation with detailed error messages
+        const missingFields = [];
+        if (!name) missingFields.push('Name');
+        if (!email) missingFields.push('Email');
+        if (!position) missingFields.push('Position');
+        if (!salaryInput) missingFields.push('Salary');
+        if (!hireDate) missingFields.push('Hire Date');
+
+        if (missingFields.length > 0) {
+          alert(`Please fill the following required fields: ${missingFields.join(', ')}`);
+          return;
+        }
+
+        const salary = parseFloat(salaryInput);
+        if (isNaN(salary) || salary <= 0) {
+          alert('Salary must be a positive number.');
+          return;
+        }
+
+        if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)) {
+          alert('Please enter a valid email address.');
+          return;
+        }
+
+        // Validate hire date format (YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(hireDate)) {
+          alert('Please select a valid hire date using the date picker (YYYY-MM-DD format).');
+          return;
+        }
+
+        const payload = { name, email, position, salary, hire_date: hireDate };
+        if (userId) payload.user_id = userId;
+
+        try {
+          console.log('Sending payload:', JSON.stringify(payload, null, 2));
+          const url = staffId ? `/api/staff/${staffId}` : '/api/staff';
+          const method = staffId ? 'PUT' : 'POST';
+          const response = await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              // Uncomment and add authentication token if required
+              // 'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.message || `Failed to ${staffId ? 'update' : 'add'} staff: ${response.statusText}`);
+          }
+          if (!result.success) {
+            throw new Error(result.message || 'Server returned an error');
+          }
+
+          console.log('Staff operation successful:', result);
+          await fetchStaff();
+          closeStaffModal();
+        } catch (error) {
+          console.error(`Error ${staffId ? 'updating' : 'adding'} staff:`, error);
+          alert(`Failed to ${staffId ? 'update' : 'add'} staff: ${error.message}`);
+        }
+      });
+    }
+
     // Open add staff modal
     function openAddStaffModal() {
-      document.getElementById('staffModal').classList.remove('hidden');
+      console.log('Opening Add Staff Modal');
+      const modal = document.getElementById('staffModal');
+      const form = document.getElementById('staffForm');
+      const staffNameInput = document.getElementById('staffName');
+
+      if (!modal || !form || !staffNameInput) {
+        console.error('Required elements not found:', {
+          modal: !!modal,
+          form: !!form,
+          staffNameInput: !!staffNameInput
+        });
+        alert('Internal error: Form elements not found.');
+        return;
+      }
+
+      // Show the modal
+      modal.classList.remove('hidden');
       document.getElementById('staffModalTitle').textContent = 'Add Staff';
-      document.getElementById('staffForm').reset();
+
+      // Reset the form
+      form.reset();
+
+      // Explicitly clear all fields
       document.getElementById('staffId').value = '';
       document.getElementById('userId').value = '';
+      staffNameInput.value = '';
+      document.getElementById('staffEmail').value = '';
+      document.getElementById('position').value = '';
+      document.getElementById('salary').value = '';
+      document.getElementById('hireDate').value = '';
+
+      // Debug: Confirm the staffName field is empty after reset
+      console.log('After reset - staffName value:', staffNameInput.value);
+
+      // Attach the form submission handler
+      attachStaffFormHandler();
     }
 
     // Open edit staff modal
     function openEditStaffModal(staffId, userId, name, email, position, salary, hireDate) {
-      document.getElementById('staffModal').classList.remove('hidden');
+      const modal = document.getElementById('staffModal');
+      modal.classList.remove('hidden');
       document.getElementById('staffModalTitle').textContent = 'Edit Staff';
       document.getElementById('staffId').value = staffId;
       document.getElementById('userId').value = userId;
@@ -248,6 +402,9 @@
       document.getElementById('position').value = position;
       document.getElementById('salary').value = salary;
       document.getElementById('hireDate').value = hireDate;
+
+      // Attach the form submission handler
+      attachStaffFormHandler();
     }
 
     // Close staff modal
@@ -268,45 +425,27 @@
       document.getElementById('userModal').classList.add('hidden');
     }
 
-    // Handle staff form submission (add/edit)
-    document.getElementById('staffForm').addEventListener('submit', async function(event) {
-      event.preventDefault();
-      const staffId = document.getElementById('staffId').value;
-      const userId = document.getElementById('userId').value;
-      const name = document.getElementById('staffName').value;
-      const email = document.getElementById('staffEmail').value;
-      const position = document.getElementById('position').value;
-      const salary = parseFloat(document.getElementById('salary').value);
-      const hireDate = document.getElementById('hireDate').value;
-
-      const payload = { name, email, position, salary, hire_date: hireDate };
-      if (userId) payload.user_id = userId;
-
-      try {
-        const url = staffId ? `/api/staff/${staffId}` : '/api/staff';
-        const method = staffId ? 'PUT' : 'POST';
-        const response = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to ${staffId ? 'update' : 'add'} staff: ${response.statusText}`);
-        }
-        await fetchStaff();
-        closeStaffModal();
-      } catch (error) {
-        console.error(`Error ${staffId ? 'updating' : 'adding'} staff:`, error);
-        alert(`Failed to ${staffId ? 'update' : 'add'} staff. Please try again.`);
-      }
-    });
-
     // Handle user form submission (edit)
     document.getElementById('userForm').addEventListener('submit', async function(event) {
       event.preventDefault();
       const userId = document.getElementById('userIdEdit').value;
-      const name = document.getElementById('userName').value;
-      const email = document.getElementById('userEmail').value;
+      const name = document.getElementById('userName').value.trim();
+      const email = document.getElementById('userEmail').value.trim();
+
+      // Client-side validation
+      const missingFields = [];
+      if (!name) missingFields.push('Name');
+      if (!email) missingFields.push('Email');
+
+      if (missingFields.length > 0) {
+        alert(`Please fill the following required fields: ${missingFields.join(', ')}`);
+        return;
+      }
+
+      if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)) {
+        alert('Please enter a valid email address.');
+        return;
+      }
 
       try {
         const response = await fetch(`/api/users/${userId}`, {
@@ -314,14 +453,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email })
         });
+        const result = await response.json();
         if (!response.ok) {
-          throw new Error(`Failed to update user: ${response.statusText}`);
+          throw new Error(result.message || `Failed to update user: ${response.statusText}`);
+        }
+        if (!result.success) {
+          throw new Error(result.message || 'Server returned an error');
         }
         await fetchUsers();
         closeUserModal();
       } catch (error) {
         console.error('Error updating user:', error);
-        alert('Failed to update user. Please try again.');
+        alert(`Failed to update user: ${error.message}`);
       }
     });
 
