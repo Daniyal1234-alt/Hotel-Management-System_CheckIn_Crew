@@ -24,6 +24,11 @@ A modern Hotel Management System designed to streamline operations, enhance gues
 - Inventory management
 - Staff performance metrics
 
+### 👥 Development Team
+- Muhammad Daniyal Aziz - Lead Developer
+- Maaz Farooq - Backend Specialist
+- Haleema Tahir - Frontend Engineer
+
 ## 🛠️ Technologies
 
 **Frontend:**
@@ -69,9 +74,5 @@ A modern Hotel Management System designed to streamline operations, enhance gues
    http://localhost:3000
 ### 🧪 Testing
 Run the test suite with coverage reporting:
-  ```bash
-  npm run test: coverage
-### 👥 Development Team
-- Muhammad Daniyal Aziz - Lead Developer
-- Maaz Farooq - Backend Specialist
-- Haleema Tahir - Frontend Engineer
+   ```bash
+   npm run test:coverage
